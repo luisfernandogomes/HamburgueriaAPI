@@ -49,6 +49,7 @@ class Insumo(Base):
     nome_insumo = Column(String(20), nullable=False, index=True)
     qtde_insumo = Column(Integer, nullable=False, index=True)
     validade = Column(String(10), index=True)
+    categoria_id = Column(Integer, ForeignKey('categorias.id_categoria_insumo'), nullable=False)
 
     def __repr__(self):
         return '<Insumo: {} {}>'.format(self.id_insumo, self.nome_insumo)
@@ -75,13 +76,13 @@ class Insumo(Base):
             'nome_insumo': self.nome_insumo,
             'qtde_insumo': self.qtde_insumo,
             'validade': self.validade,
+            'categoria_id': self.categoria_id,
         }
         return var_insumo
 
 class CategoriaInsumo(Base):
     __tablename__ = 'categorias_insumos'
     id_categoria_insumo = Column(Integer, primary_key=True)
-    id_insumo = Column(Integer, ForeignKey('insumos.id_insumo'))
     nome_categoria_insumo = Column(String(20), nullable=False, index=True)
 
     def __repr__(self):
@@ -107,7 +108,6 @@ class CategoriaInsumo(Base):
         var_categoria_insumo = {
             'id_categoria_insumo': self.id_categoria_insumo,
             'nome_categoria_insumo': self.nome_categoria_insumo,
-            'id_insumo': self.id_insumo,
         }
         return var_categoria_insumo
 

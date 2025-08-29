@@ -59,7 +59,6 @@ def cadastrar_lanche():
     finally:
         db_session.close()
 
-
 @app.route('/cadastrar_insumo', methods=['POST'])
 def cadastrar_insumo():
 
@@ -67,24 +66,26 @@ def cadastrar_insumo():
     try:
         dados_insumo = request.get_json()
 
-        if not 'nome_insumo' in dados_insumo or not 'qtd_insumo' in dados_insumo or not 'validade' in dados_insumo:
+        if not 'nome_insumo' in dados_insumo or not 'qtd_insumo' in dados_insumo or not 'validade' in dados_insumo or not 'categoria_id' in dados_insumo:
             return jsonify({
                 "error": "Campo inexistente",
-            })
+            }), 400
 
-        if dados_insumo['nome_insumo'] == "" or dados_insumo['qtd_insumo'] == "" or dados_insumo['validade'] == "":
+        if dados_insumo['nome_insumo'] == "" or dados_insumo['qtd_insumo'] == "" or dados_insumo['validade'] == "" or dados_insumo['categoria_id'] == "":
             return jsonify({
                 "error": "Preencher todos os campos"
-        })
+        }), 400
 
         else:
             nome_insumo = dados_insumo['nome_insumo']
             qtd_insumo = dados_insumo['qtd_insumo']
             validade = dados_insumo['validade']
+            categoria_id = dados_insumo['categoria_id']
             form_novo_insumo = Insumo(
                 nome_insumo = nome_insumo,
                 qtde_insumo = qtd_insumo,
                 validade = validade,
+                categoria_id = categoria_id,
             )
             print(form_novo_insumo)
             form_novo_insumo.save(db_session)
@@ -93,6 +94,7 @@ def cadastrar_insumo():
                 "id_insumo": form_novo_insumo.id_insumo,
                 "nome_insumo": nome_insumo,
                 "qtde_insumo": qtd_insumo,
+                "categoria_id": categoria_id,
             }
 
             return jsonify(resultado), 201
@@ -199,7 +201,122 @@ def listar_lanches():
         db_session.close()
 
 
+@app.route('/listar_insumos', methods=['GET'])
+def listar_insumos():
+    db_session = local_session()
+    try:
 
+        sql_insumos = select(Insumo)
+        resultado_insumos = db_session.execute(sql_insumos).scalars()
+        lista_insumos = []
+        for n in resultado_insumos:
+            lista_insumos.append(n.serialize())
+            print(lista_insumos[-1])
+        return jsonify({
+            "lista_insumos": lista_insumos
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    finally:
+        db_session.close()
+
+
+@app.route('/listar_categoria', methods=['GET'])
+def listar_categorias():
+    db_session = local_session()
+    try:
+        sql_categorias = select(CategoriaInsumo)
+        resultado_categorias = db_session.execute(sql_categorias).scalars()
+        lista_categorias = []
+        for n in resultado_categorias:
+            lista_categorias.append(n.serialize())
+            print(lista_categorias[-1])
+        return jsonify({
+            "lista_categorias": lista_categorias
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    finally:
+        db_session.close()
+
+
+
+@app.route('/get_insumdo_id/<id_insumo>', methods=['GET'])
+def get_insumdo_id(id_insumo):
+    db_session = local_session()
+    try:
+        insumo = db_session.execute(select(Insumo).filter_by(id=int(id_insumo))).scalar()
+
+        if not insumo:
+            return jsonify({
+                "error":"Insumo encontrado"
+            })
+
+        return jsonify({
+            "sucess": "Insumo encontrado com sucesso",
+            "id_insumo": insumo.id_insumo,
+            "nome_insumo": insumo.nome_insumo,
+            "qtde_insumo": insumo.qtde_insumo,
+            "validade": insumo.validade,
+            "categoria_id": insumo.categoria_id,
+        })
+    except Exception as e:
+        return jsonify({
+            "error": "Valor invalido"
+        })
+    finally:
+        db_session.close()
+@app.route('/editar_lanche/<id_lanche>', methods=['PUT']))
+def editar_lanche(id_lanche):
+    db_session = local_session()
+    try:
+        dados_editar_lanche = request.get_json()
+
+        lanche_resultado = local_session.execute(select(Lanche).filter_by(id=int(id_lanche))).scalar()
+        print(lanche_resultado)
+
+        if not lanche_resultado:
+            return jsonify({
+                "error": "Lanche não encontrado"
+            }), 400
+
+        if not 'nome_lanche' in dados_editar_lanche or not 'descricao_lanche' in dados_editar_lanche or not 'disponivel' in dados_editar_lanche:
+            return jsonify({
+                'error': 'Campo inexistente',
+            }), 400
+
+        if dados_editar_lanche['nome_lanche'] == "" or dados_editar_lanche['descricao_lanche'] == "" or \
+                dados_editar_lanche['disponivel'] == "":
+            return jsonify({
+                "error": "Preencher todos os campos"
+            }), 400
+
+        else:
+            lanche_resultado.nome_lanche = dados_editar_lanche['nome_lanche']
+            lanche_resultado.disponivel = dados_editar_lanche['disponivel']
+            lanche_resultado.descricao_lanche = dados_editar_lanche['descricao_lanche']
+
+            lanche_resultado.save(db_session)
+
+            resultado = {
+                "id_lanche": lanche_resultado.id_lanche,
+                "nome_lanche": lanche_resultado.nome_lanche,
+                "disponivel": lanche_resultado.disponivel,
+                "descricao_lanche": lanche_resultado.descricao_lanche,
+                "success": "lanche editado com sucesso"
+            }
+
+            return jsonify(resultado), 201
+
+    except ValueError:
+        return jsonify({
+            "error": "Valor inserido invalido"
+        }), 400
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    finally:
+        db_session.close()
 
 
 if __name__ == '__main__':
