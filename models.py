@@ -7,6 +7,7 @@ local_session = scoped_session(sessionmaker(bind=engine))
 
 Base = declarative_base()
 
+
 class Lanche(Base):
     __tablename__ = 'lanches'
     id_lanche = Column(Integer, primary_key=True)
