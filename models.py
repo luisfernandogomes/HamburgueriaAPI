@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, ForeignKey
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
-# Configuração do banco de dados.
+# Configuração do banco de dados
 engine = create_engine('sqlite:///banco_rb.db', connect_args={"check_same_thread": False})
 local_session = scoped_session(sessionmaker(bind=engine))
 
