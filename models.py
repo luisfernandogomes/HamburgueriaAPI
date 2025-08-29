@@ -113,6 +113,43 @@ class Venda(Base):
         }
         return var_venda
 
+class Entrada(Base):
+    __tablename__ = 'entradas'
+    id_entrada = Column(Integer, primary_key=True)
+    data_entrada = Column(String(10), nullable=False, index=True)
+    valor_entrada = Column(Float, nullable=False, index=True)
+    qtde_entrada = Column(Integer, nullable=False, index=True)
+    validade_lote = Column(String(10), nullable=False, index=True)
+
+    def __repr__(self):
+        return '<Entrada: {} {}>'.format(self.id_entrada, self.data_entrada)
+
+    def save(self, db_session):
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def serialize(self):
+        var_entrada = {
+            'id_entrada': self.id_entrada,
+            'data_entrada': self.data_entrada,
+            'valor_entrada': self.valor_entrada,
+            'qtde_entrada': self.qtde_entrada,
+            'validade_lote': self.validade_lote,
+        }
+        return var_entrada
+
 
 def init_db():
     Base.metadata.create_all(bind=engine)
