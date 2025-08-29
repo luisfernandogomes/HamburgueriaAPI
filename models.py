@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, ForeignKey
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
 # Configuração do banco de dados
@@ -81,6 +81,7 @@ class Insumo(Base):
 class CategoriaInsumo(Base):
     __tablename__ = 'categorias_insumos'
     id_categoria_insumo = Column(Integer, primary_key=True)
+    id_insumo = Column(Integer, ForeignKey('insumos.id_insumo'))
     nome_categoria_insumo = Column(String(20), nullable=False, index=True)
 
     def __repr__(self):
@@ -106,6 +107,7 @@ class CategoriaInsumo(Base):
         var_categoria_insumo = {
             'id_categoria_insumo': self.id_categoria_insumo,
             'nome_categoria_insumo': self.nome_categoria_insumo,
+            'id_insumo': self.id_insumo,
         }
         return var_categoria_insumo
 
