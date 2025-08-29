@@ -42,6 +42,41 @@ class Lanche(Base):
         }
         return var_lanche
 
+class Insumo(Base):
+    __tablename__ = 'insumos'
+    id_insumo = Column(Integer, primary_key=True)
+    nome_insumo = Column(String(20), nullable=False, index=True)
+    qtde_insumo = Column(Integer, nullable=False, index=True)
+    validade = Column(String(10), index=True)
+
+    def __repr__(self):
+        return '<Insumo: {} {}>'.format(self.id_insumo, self.nome_insumo)
+
+    def save(self, db_session):
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def serialize(self):
+        var_insumo = {
+            'id_insumo': self.id_insumo,
+            'nome_insumo': self.nome_insumo,
+            'qtde_insumo': self.qtde_insumo,
+            'validade': self.validade,
+        }
+        return var_insumo
+
 def init_db():
     Base.metadata.create_all(bind=engine)
 
