@@ -78,6 +78,37 @@ class Insumo(Base):
         }
         return var_insumo
 
+class CategoriaInsumo(Base):
+    __tablename__ = 'categorias_insumos'
+    id_categoria_insumo = Column(Integer, primary_key=True)
+    nome_categoria_insumo = Column(String(20), nullable=False, index=True)
+
+    def __repr__(self):
+        return '<CategoriaInsumo: {} {}>'.format(self.id_categoria_insumo, self.nome_categoria_insumo)
+
+    def save(self, db_session):
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def serialize(self):
+        var_categoria_insumo = {
+            'id_categoria_insumo': self.id_categoria_insumo,
+            'nome_categoria_insumo': self.nome_categoria_insumo,
+        }
+        return var_categoria_insumo
+
 class Venda(Base):
     __tablename__ = 'vendas'
     id_venda = Column(Integer, primary_key=True)
