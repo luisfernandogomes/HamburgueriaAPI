@@ -216,6 +216,7 @@ class Funcionario(Base):
             'papel': self.papel,
             'status_ativo': self.status_ativo,
         }
+        return var_funcionario
 
 def init_db():
     Base.metadata.create_all(bind=engine)
