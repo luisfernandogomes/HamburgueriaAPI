@@ -150,6 +150,41 @@ class Entrada(Base):
         }
         return var_entrada
 
+class Funcionario(Base):
+    __tablename__ = 'funcionarios'
+    id_funcionario = Column(Integer, primary_key=True)
+    nome_funcionario = Column(String(20), nullable=False, index=True)
+    cpf = Column(String(11), nullable=False, index=True)
+    papel = Column(String(20), nullable=False, index=True)
+    status_ativo = Column(Boolean, default=True, index=True)
+
+    def __repr__(self):
+        return 'Funcionario: {} {}>'.format(self.id_funcionario, self.nome_funcionario)
+
+    def save(self, db_session):
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def serialize(self):
+        var_funcionario = {
+            'id_funcionario': self.id_funcionario,
+            'nome_funcionario': self.nome_funcionario,
+            'cpf': self.cpf,
+            'papel': self.papel,
+            'status_ativo': self.status_ativo,
+        }
 
 def init_db():
     Base.metadata.create_all(bind=engine)
