@@ -266,57 +266,57 @@ def get_insumdo_id(id_insumo):
         })
     finally:
         db_session.close()
-@app.route('/editar_lanche/<id_lanche>', methods=['PUT']))
-def editar_lanche(id_lanche):
-    db_session = local_session()
-    try:
-        dados_editar_lanche = request.get_json()
-
-        lanche_resultado = local_session.execute(select(Lanche).filter_by(id=int(id_lanche))).scalar()
-        print(lanche_resultado)
-
-        if not lanche_resultado:
-            return jsonify({
-                "error": "Lanche não encontrado"
-            }), 400
-
-        if not 'nome_lanche' in dados_editar_lanche or not 'descricao_lanche' in dados_editar_lanche or not 'disponivel' in dados_editar_lanche:
-            return jsonify({
-                'error': 'Campo inexistente',
-            }), 400
-
-        if dados_editar_lanche['nome_lanche'] == "" or dados_editar_lanche['descricao_lanche'] == "" or \
-                dados_editar_lanche['disponivel'] == "":
-            return jsonify({
-                "error": "Preencher todos os campos"
-            }), 400
-
-        else:
-            lanche_resultado.nome_lanche = dados_editar_lanche['nome_lanche']
-            lanche_resultado.disponivel = dados_editar_lanche['disponivel']
-            lanche_resultado.descricao_lanche = dados_editar_lanche['descricao_lanche']
-
-            lanche_resultado.save(db_session)
-
-            resultado = {
-                "id_lanche": lanche_resultado.id_lanche,
-                "nome_lanche": lanche_resultado.nome_lanche,
-                "disponivel": lanche_resultado.disponivel,
-                "descricao_lanche": lanche_resultado.descricao_lanche,
-                "success": "lanche editado com sucesso"
-            }
-
-            return jsonify(resultado), 201
-
-    except ValueError:
-        return jsonify({
-            "error": "Valor inserido invalido"
-        }), 400
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
-    finally:
-        db_session.close()
+# @app.route('/editar_lanche/<id_lanche>', methods=['PUT']))
+# def editar_lanche(id_lanche):
+#     db_session = local_session()
+#     try:
+#         dados_editar_lanche = request.get_json()
+#
+#         lanche_resultado = local_session.execute(select(Lanche).filter_by(id=int(id_lanche))).scalar()
+#         print(lanche_resultado)
+#
+#         if not lanche_resultado:
+#             return jsonify({
+#                 "error": "Lanche não encontrado"
+#             }), 400
+#
+#         if not 'nome_lanche' in dados_editar_lanche or not 'descricao_lanche' in dados_editar_lanche or not 'disponivel' in dados_editar_lanche:
+#             return jsonify({
+#                 'error': 'Campo inexistente',
+#             }), 400
+#
+#         if dados_editar_lanche['nome_lanche'] == "" or dados_editar_lanche['descricao_lanche'] == "" or \
+#                 dados_editar_lanche['disponivel'] == "":
+#             return jsonify({
+#                 "error": "Preencher todos os campos"
+#             }), 400
+#
+#         else:
+#             lanche_resultado.nome_lanche = dados_editar_lanche['nome_lanche']
+#             lanche_resultado.disponivel = dados_editar_lanche['disponivel']
+#             lanche_resultado.descricao_lanche = dados_editar_lanche['descricao_lanche']
+#
+#             lanche_resultado.save(db_session)
+#
+#             resultado = {
+#                 "id_lanche": lanche_resultado.id_lanche,
+#                 "nome_lanche": lanche_resultado.nome_lanche,
+#                 "disponivel": lanche_resultado.disponivel,
+#                 "descricao_lanche": lanche_resultado.descricao_lanche,
+#                 "success": "lanche editado com sucesso"
+#             }
+#
+#             return jsonify(resultado), 201
+#
+#     except ValueError:
+#         return jsonify({
+#             "error": "Valor inserido invalido"
+#         }), 400
+#
+#     except Exception as e:
+#         return jsonify({"error": str(e)})
+#     finally:
+#         db_session.close()
 
 
 if __name__ == '__main__':
