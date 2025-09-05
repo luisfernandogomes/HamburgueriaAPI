@@ -22,7 +22,7 @@ def cadastrar_lanche():
     try:
         dados_lanche = request.get_json()
 
-        if not 'nome_lanche' in dados_lanche or not 'descricao_lanche' in dados_lanche:
+        if not 'nome_lanche' in dados_lanche or not 'descricao_lanche' in dados_lanche or not 'valor' in dados_lanche:
             return jsonify({
                 'error': 'Campo inexistente',
             })
@@ -142,22 +142,22 @@ def cadastrar_entrada():
         db_session.close()
 
 
-@app.route('/categoria_insumo', methods=['POST'])
-def listar_categoria_insumo():
+@app.route('/categorias', methods=['POST'])
+def listar_categoria():
     db_session = local_session()
     try:
-        dados_categoria_insumo = request.get_json()
+        dados_categoria = request.get_json()
 
-        if not 'nome_insumo' in dados_categoria_insumo:
+        if not 'nome_insumo' in dados_categoria:
             return jsonify({
                 "error": "Campo inexistente",
             })
-        if dados_categoria_insumo['nome_insumo'] == "":
+        if dados_categoria['nome_insumo'] == "":
             return jsonify({
                 "error": "Preencher todos os campos"
             })
         else:
-            nome_insumo = dados_categoria_insumo['nome_insumo']
+            nome_insumo = dados_categoria['nome_insumo']
             form_novo_insumo = Insumo(
                 nome_insumo = nome_insumo,
             )
@@ -183,13 +183,13 @@ def listar_lanches():
 
         sql_lanche = select(Lanche)
         resultado_lanches = db_session.execute(sql_lanche).scalars()
-        lista_lanches = []
+        lanches = []
 
         for n in resultado_lanches:
-            lista_lanches.append(n.serialize())
-            print(lista_lanches[-1])
+            lanches.append(n.serialize())
+            print(lanches[-1])
         return jsonify({
-            "lista_lanches": lista_lanches
+            "lanches": lanches
         })
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -204,12 +204,12 @@ def listar_insumos():
 
         sql_insumos = select(Insumo)
         resultado_insumos = db_session.execute(sql_insumos).scalars()
-        lista_insumos = []
+        insumos = []
         for n in resultado_insumos:
-            lista_insumos.append(n.serialize())
-            print(lista_insumos[-1])
+            insumos.append(n.serialize())
+            print(insumos[-1])
         return jsonify({
-            "lista_insumos": lista_insumos
+            "insumos": insumos
         })
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -217,18 +217,18 @@ def listar_insumos():
         db_session.close()
 
 
-@app.route('/listar_categoria', methods=['GET'])
+@app.route('/categorias', methods=['GET'])
 def listar_categorias():
     db_session = local_session()
     try:
-        sql_categorias = select(CategoriaInsumo)
+        sql_categorias = select(Categoria)
         resultado_categorias = db_session.execute(sql_categorias).scalars()
-        lista_categorias = []
+        categorias = []
         for n in resultado_categorias:
-            lista_categorias.append(n.serialize())
-            print(lista_categorias[-1])
+            categorias.append(n.serialize())
+            print(categorias[-1])
         return jsonify({
-            "lista_categorias": lista_categorias
+            "categorias": categorias
         })
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -238,7 +238,7 @@ def listar_categorias():
 
 
 @app.route('/get_insumdo_id/<id_insumo>', methods=['GET'])
-def get_insumdo_id(id_insumo):
+def get_insumo_id(id_insumo):
     db_session = local_session()
     try:
         insumo = db_session.execute(select(Insumo).filter_by(id=int(id_insumo))).scalar()

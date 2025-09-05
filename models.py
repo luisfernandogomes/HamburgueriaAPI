@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, F
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
 # Configuração do banco de dados
-engine = create_engine('sqlite:///banco_rb.db', connect_args={"check_same_thread": False})
+engine = create_engine('sqlite:///BancoRoyal.db', connect_args={"check_same_thread": False})
 local_session = scoped_session(sessionmaker(bind=engine))
 
 Base = declarative_base()
@@ -13,6 +13,7 @@ class Lanche(Base):
     id_lanche = Column(Integer, primary_key=True)
     nome_lanche = Column(String(20), nullable=False, index=True)
     descricao_lanche = Column(String(255), index=True)
+    valor = Column(Float, index=True)
     disponivel = Column(Boolean, default=True, index=True)
 
     def __repr__(self):
@@ -40,6 +41,7 @@ class Lanche(Base):
             'nome_lanche': self.nome_lanche,
             'descricao_lanche': self.descricao_lanche,
             'disponivel': self.disponivel,
+            'valor': self.valor,
         }
         return var_lanche
 
@@ -49,7 +51,7 @@ class Insumo(Base):
     nome_insumo = Column(String(20), nullable=False, index=True)
     qtde_insumo = Column(Integer, nullable=False, index=True)
     validade = Column(String(10), index=True)
-    categoria_id = Column(Integer, ForeignKey('categorias_insumos.id_categoria_insumo'), nullable=False)
+    categoria_id = Column(Integer, ForeignKey('categorias.id_categoria'), nullable=False)
 
     def __repr__(self):
         return '<Insumo: {} {}>'.format(self.id_insumo, self.nome_insumo)
@@ -80,13 +82,13 @@ class Insumo(Base):
         }
         return var_insumo
 
-class CategoriaInsumo(Base):
-    __tablename__ = 'categorias_insumos'
-    id_categoria_insumo = Column(Integer, primary_key=True)
-    nome_categoria_insumo = Column(String(20), nullable=False, index=True)
+class Categoria(Base):
+    __tablename__ = 'categorias'
+    id_categoria= Column(Integer, primary_key=True)
+    nome_categoria = Column(String(20), nullable=False, index=True)
 
     def __repr__(self):
-        return '<CategoriaInsumo: {} {}>'.format(self.id_categoria_insumo, self.nome_categoria_insumo)
+        return '<Categoria: {} {}>'.format(self.id_categoria, self.nome_categoria)
 
     def save(self, db_session):
         try:
@@ -105,11 +107,11 @@ class CategoriaInsumo(Base):
             raise
 
     def serialize(self):
-        var_categoria_insumo = {
-            'id_categoria_insumo': self.id_categoria_insumo,
-            'nome_categoria_insumo': self.nome_categoria_insumo,
+        var_categoria = {
+            'id_categoria': self.id_categoria,
+            'nome_categoria': self.nome_categoria,
         }
-        return var_categoria_insumo
+        return var_categoria
 
 class Venda(Base):
     __tablename__ = 'vendas'
@@ -183,16 +185,17 @@ class Entrada(Base):
         }
         return var_entrada
 
-class Funcionario(Base):
-    __tablename__ = 'funcionarios'
-    id_funcionario = Column(Integer, primary_key=True)
-    nome_funcionario = Column(String(20), nullable=False, index=True)
+class Pessoa(Base):
+    __tablename__ = 'pessoas'
+    id_pessoa = Column(Integer, primary_key=True)
+    nome_pessoa = Column(String(20), nullable=False, index=True)
     cpf = Column(String(11), nullable=False, index=True)
+    salario = Column(Integer, nullable=False, index=True)
     papel = Column(String(20), nullable=False, index=True)
     status_ativo = Column(Boolean, default=True, index=True)
 
     def __repr__(self):
-        return 'Funcionario: {} {}>'.format(self.id_funcionario, self.nome_funcionario)
+        return 'Pessoa: {} {}>'.format(self.id_pessoa, self.nome_pessoa)
 
     def save(self, db_session):
         try:
@@ -211,14 +214,15 @@ class Funcionario(Base):
             raise
 
     def serialize(self):
-        var_funcionario = {
-            'id_funcionario': self.id_funcionario,
-            'nome_funcionario': self.nome_funcionario,
+        var_pessoa = {
+            'id_pessoa': self.id_pessoa,
+            'nome_pessoa': self.nome_pessoa,
             'cpf': self.cpf,
+            'salario': self.salario,
             'papel': self.papel,
             'status_ativo': self.status_ativo,
         }
-        return var_funcionario
+        return var_pessoa
 
 def init_db():
     Base.metadata.create_all(bind=engine)
