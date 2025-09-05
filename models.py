@@ -13,7 +13,7 @@ class Lanche(Base):
     id_lanche = Column(Integer, primary_key=True)
     nome_lanche = Column(String(20), nullable=False, index=True)
     descricao_lanche = Column(String(255), index=True)
-    valor = Column(Float, index=True)
+    valor_lanche = Column(Float, index=True)
     disponivel = Column(Boolean, default=True, index=True)
 
     def __repr__(self):
@@ -41,7 +41,7 @@ class Lanche(Base):
             'nome_lanche': self.nome_lanche,
             'descricao_lanche': self.descricao_lanche,
             'disponivel': self.disponivel,
-            'valor': self.valor,
+            'valor_lanche': self.valor_lanche,
         }
         return var_lanche
 

@@ -18,12 +18,12 @@ def cadastrar_lanche():
     try:
         dados_lanche = request.get_json()
 
-        if not 'nome_lanche' in dados_lanche or not 'descricao_lanche' in dados_lanche or not 'valor' in dados_lanche:
+        if not 'nome_lanche' in dados_lanche or not 'descricao_lanche' in dados_lanche or not 'valor_lanche' in dados_lanche:
             return jsonify({
                 'error': 'Campo inexistente',
             })
 
-        if dados_lanche['nome_lanche'] == "" or dados_lanche['descricao_lanche'] == "" or dados_lanche['valor'] == "":
+        if dados_lanche['nome_lanche'] == "" or dados_lanche['descricao_lanche'] == "" or dados_lanche['valor_lanche'] == "":
             return jsonify({
                 "error": "Preencher todos os campos"
             })
@@ -31,22 +31,21 @@ def cadastrar_lanche():
         else:
             nome_lanche = dados_lanche['nome_lanche']
             descricao_lanche = dados_lanche['descricao_lanche']
-            valor = dados_lanche['valor']
+            valor_lanche = dados_lanche['valor_lanche']
             form_novo_lanche = Lanche(
                 nome_lanche = nome_lanche,
                 descricao_lanche = descricao_lanche,
-                valor = valor
+                valor_lanche = valor_lanche
             )
             print(form_novo_lanche)
             form_novo_lanche.save(db_session)
-
-            resultado = {
+            dicio = {
                 "id_lanche": form_novo_lanche.id_lanche,
                 "nome_lanche": nome_lanche,
                 "descricao_lanche": descricao_lanche,
-                "valor": valor,
-                "success":"Cadastrado com sucesso"
+                "valor_lanche": valor_lanche,
             }
+            resultado = {"success":"Cadastrado com sucesso", "lanches": dicio}
 
             return jsonify(resultado), 201
 
@@ -86,13 +85,14 @@ def cadastrar_insumo():
             print(form_novo_insumo)
             form_novo_insumo.save(db_session)
 
-            resultado = {
+            dicio = {
                 "id_insumo": form_novo_insumo.id_insumo,
                 "nome_insumo": nome_insumo,
-                "qtde_insumo": qtd_insumo,
+                "qtd_insumo": qtd_insumo,
+                "validade": validade,
                 "categoria_id": categoria_id,
-                "success": "Insumo cadastrado com sucesso"
             }
+            resultado = {"success": "Insumo cadastrado com sucesso", "insumos": dicio}
 
             return jsonify(resultado), 201
 
@@ -188,27 +188,27 @@ def cadastrar_categoria():
     try:
         dados_categoria = request.get_json()
 
-        if not 'nome_insumo' in dados_categoria:
+        if not 'nome_categoria' in dados_categoria:
             return jsonify({
                 "error": "Campo inexistente",
             })
-        if dados_categoria['nome_insumo'] == "":
+        if dados_categoria['nome_categoria'] == "":
             return jsonify({
                 "error": "Preencher todos os campos"
             })
         else:
-            nome_insumo = dados_categoria['nome_insumo']
-            form_novo_insumo = Insumo(
-                nome_insumo = nome_insumo,
+            nome_categoria = dados_categoria['nome_categoria']
+            form_nova_categoria = Categoria(
+                nome_categoria = nome_categoria,
             )
-            print(form_novo_insumo)
-            form_novo_insumo.save(db_session)
+            print(form_nova_categoria)
+            form_nova_categoria.save(db_session)
 
-            resultado = {
-                "id_insumo": form_novo_insumo.id_insumo,
-                "nome_insumo": nome_insumo,
-                "success": "insumo cadastrado com sucesso",
+            dicio = {
+                "id_categoria": form_nova_categoria.id_categoria,
+                "nome_categoria": nome_categoria,
             }
+            resultado = {"success": "Categoria cadastrada com sucesso", "categorias": dicio}
 
             return jsonify(resultado), 201
     except Exception as e:
@@ -230,13 +230,13 @@ def listar_lanches():
             lanches.append(n.serialize())
             print(lanches[-1])
         return jsonify({
-            "lanches": lanches
+            "lanches": lanches,
+            "success": "Listado com sucesso",
         })
     except Exception as e:
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
-
 
 @app.route('/insumos', methods=['GET'])
 def listar_insumos():
@@ -250,7 +250,8 @@ def listar_insumos():
             insumos.append(n.serialize())
             print(insumos[-1])
         return jsonify({
-            "insumos": insumos
+            "insumos": insumos,
+            "success": "Listado com sucesso",
         })
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -268,7 +269,8 @@ def listar_categorias():
             categorias.append(n.serialize())
             print(categorias[-1])
         return jsonify({
-            "categorias": categorias
+            "categorias": categorias,
+            "success": "Listado com sucesso",
         })
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -372,30 +374,29 @@ def editar_lanche(id_lanche):
                 "error": "Lanche não encontrado"
             }), 400
 
-        if not 'nome_lanche' in dados_editar_lanche or not 'descricao_lanche' in dados_editar_lanche or not 'valor' in dados_editar_lanche:
+        if not 'nome_lanche' in dados_editar_lanche or not 'descricao_lanche' in dados_editar_lanche or not 'valor_lanche' in dados_editar_lanche:
             return jsonify({
                 'error': 'Campo inexistente',
             }), 400
 
-        if dados_editar_lanche['nome_lanche'] == "" or dados_editar_lanche['descricao_lanche'] == "" or dados_editar_lanche['valor'] == "":
+        if dados_editar_lanche['nome_lanche'] == "" or dados_editar_lanche['descricao_lanche'] == "" or dados_editar_lanche['valor_lanche'] == "":
             return jsonify({
                 "error": "Preencher todos os campos"
             }), 400
 
         else:
             lanche_resultado.nome_lanche = dados_editar_lanche['nome_lanche']
-            lanche_resultado.valor = dados_editar_lanche['valor']
+            lanche_resultado.valor_lanche = dados_editar_lanche['valor_lanche']
             lanche_resultado.descricao_lanche = dados_editar_lanche['descricao_lanche']
 
             lanche_resultado.save(db_session)
-
-            resultado = {
+            dicio = {
                 "id_lanche": lanche_resultado.id_lanche,
                 "nome_lanche": lanche_resultado.nome_lanche,
-                "valor": lanche_resultado.valor,
+                "valor_lanche": lanche_resultado.valor_lanche,
                 "descricao_lanche": lanche_resultado.descricao_lanche,
-                "success": "lanche editado com sucesso"
             }
+            resultado = {"success": "lanche editado com sucesso", "lanches": dicio}
 
             return jsonify(resultado), 201
 
@@ -415,7 +416,7 @@ def editar_categoria(id_categoria):
     try:
         dados_editar_categoria = request.get_json()
 
-        categoria_resultado = local_session.execute(select(Categoria).filter_by(id=int(id_categoria))).scalar()
+        categoria_resultado = local_session.execute(select(Categoria).filter_by(id_categoria=int(id_categoria))).scalar()
         print(categoria_resultado)
 
         if not categoria_resultado:
@@ -436,13 +437,13 @@ def editar_categoria(id_categoria):
         else:
             categoria_resultado.nome_categoria = dados_editar_categoria['nome_categoria']
 
-            dados_editar_categoria.save(db_session)
+            categoria_resultado.save(db_session)
 
-            resultado = {
+            dicio = {
                 "id_categoria": categoria_resultado.id_categoria,
                 "nome_categoria": categoria_resultado.nome_categoria,
-                "sucesso": "categoria editado com sucesso"
             }
+            resultado = {"success": "categoria editado com sucesso","categorias": dicio}
 
             return jsonify(resultado), 200
 
@@ -517,7 +518,7 @@ def editar_insumo(id_insumo):
     try:
         dados_editar_insumo = request.get_json()
 
-        insumo_resultado = local_session.execute(select(Insumo).filter_by(id=int(id_insumo))).scalar()
+        insumo_resultado = local_session.execute(select(Insumo).filter_by(id_insumo=int(id_insumo))).scalar()
         print(insumo_resultado)
 
         if not insumo_resultado:
@@ -525,12 +526,12 @@ def editar_insumo(id_insumo):
                 "error": "Insumo não encontrada"
             }), 400
 
-        if not 'nome_insumo' in dados_editar_insumo or not "qtde_insumo" in dados_editar_insumo or not "validade" in dados_editar_insumo or not "categoria_id" in dados_editar_insumo:
+        if not 'nome_insumo' in dados_editar_insumo or not "qtd_insumo" in dados_editar_insumo or not "validade" in dados_editar_insumo or not "categoria_id" in dados_editar_insumo:
             return jsonify({
                 "error": "Campo inexistente"
             }), 400
 
-        if dados_editar_insumo['nome_insumo'] == "" or dados_editar_insumo['qtde_insumo'] == "" or dados_editar_insumo['categoria_id'] == "" or dados_editar_insumo['validade'] == "":
+        if dados_editar_insumo['nome_insumo'] == "" or dados_editar_insumo['qtd_insumo'] == "" or dados_editar_insumo['categoria_id'] == "" or dados_editar_insumo['validade'] == "":
             return jsonify({
                 "error": "Preencher todos os campos"
             }), 400
@@ -539,18 +540,18 @@ def editar_insumo(id_insumo):
             insumo_resultado.nome_insumo = dados_editar_insumo['nome_insumo']
             insumo_resultado.categoria_id = dados_editar_insumo['categoria_id']
             insumo_resultado.validade = dados_editar_insumo['validade']
-            insumo_resultado.qtde_insumo = dados_editar_insumo['qtde_insumo']
+            insumo_resultado.qtde_insumo = dados_editar_insumo['qtd_insumo']
 
             insumo_resultado.save(db_session)
 
-            resultado = {
+            dicio = {
                 "id_insumo": insumo_resultado.id_insumo,
                 "nome_insumo": insumo_resultado.nome_insumo,
                 "categoria_id": insumo_resultado.categoria_id,
                 "validade": insumo_resultado.validade,
-                "qtde_insumo": insumo_resultado.qtde_insumo,
-                "success": "insumo editado com sucesso"
+                "qtd_insumo": insumo_resultado.qtde_insumo,
             }
+            resultado = {"success": "insumo editado com sucesso", "insumos": dicio}
 
             return jsonify(resultado), 200
 
