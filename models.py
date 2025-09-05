@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, ForeignKey
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
-
+from werkzeug.security import generate_password_hash, check_password_hash
 # Configuração do banco de dados
 engine = create_engine('sqlite:///BancoRoyal.db', connect_args={"check_same_thread": False})
 local_session = scoped_session(sessionmaker(bind=engine))
@@ -193,9 +193,17 @@ class Pessoa(Base):
     salario = Column(Float, nullable=False, index=True)
     papel = Column(String(20), nullable=False, index=True)
     status_ativo = Column(Boolean, default=True, index=True)
+    senha_hash = Column(String, nullable=False)
+    email = Column(String, nullable=False, unique=True)
 
     def __repr__(self):
         return 'Pessoa: {} {}>'.format(self.id_pessoa, self.nome_pessoa)
+
+    def set_senha_hash(self, senha):
+        self.senha_hash = generate_password_hash(senha)
+
+    def check_password(self, senha):
+        return check_password_hash(self.senha_hash, senha)
 
     def save(self, db_session):
         try:
@@ -221,6 +229,8 @@ class Pessoa(Base):
             'salario': self.salario,
             'papel': self.papel,
             'status_ativo': self.status_ativo,
+            'email': self.email,
+
         }
         return var_pessoa
 
