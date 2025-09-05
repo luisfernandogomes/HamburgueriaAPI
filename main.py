@@ -101,6 +101,56 @@ def cadastrar_insumo():
     finally:
         db_session.close()
 
+@app.route('/pessoas', methods=['POST'])
+def cadastrar_pessoa():
+
+    db_session = local_session()
+    try:
+        dados_pessoa = request.get_json()
+
+        campos_obrigatorios = ["nome_pessoa", "cpf", "salario", "papel", "senha_hash", "email"]
+
+        if not all(campo in dados_pessoa for campo in campos_obrigatorios):
+            return jsonify({"error": "Campo inexistente"}), 400
+
+        if any(dados_pessoa[campo] == "" for campo in campos_obrigatorios):
+            return jsonify({"error": "Preencher todos os campos"}), 400
+
+        else:
+            nome_pessoa = dados_pessoa['nome_pessoa']
+            cpf = dados_pessoa['cpf']
+            salario = dados_pessoa['salario']
+            papel = dados_pessoa['papel']
+            senha_hash = dados_pessoa['senha_hash']
+            email = dados_pessoa['email']
+
+            form_nova_pessoa = Pessoa(
+                nome_pessoa = nome_pessoa,
+                cpf = cpf,
+                salario = salario,
+                papel = papel,
+                senha_hash = senha_hash,
+                email = email,
+            )
+            print(form_nova_pessoa)
+            form_nova_pessoa.save(db_session)
+
+            dicio = {
+                'nome_pessoa':nome_pessoa,
+                'cpf':cpf,
+                'salario':salario,
+                'papel':papel,
+                'email':email,
+            }
+            resultado = {"success": "Pessoa cadastrada com sucesso", "Pessoas": dicio}
+
+            return jsonify(resultado), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    finally:
+        db_session.close()
+
 @app.route('/vendas', methods=['POST'])
 def cadastrar_venda():
     db_session = local_session()
@@ -129,13 +179,13 @@ def cadastrar_venda():
             print(form_nova_venda)
             form_nova_venda.save(db_session)
 
-            resultado = {
+            dicio = {
                 "id_venda": form_nova_venda.id_venda,
                 "valor_venda": valor_venda,
                 "data_venda": data_venda,
                 "status_venda": status_venda,
-                "success": "venda cadastrada com sucesso",
             }
+            resultado = {"success": "venda cadastrada com sucesso","vendas":dicio}
             return jsonify(resultado), 201
     except Exception as e:
         return jsonify({"error": str(e)})

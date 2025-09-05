@@ -192,7 +192,7 @@ class Pessoa(Base):
     cpf = Column(String(11), nullable=False, index=True)
     salario = Column(Float, nullable=False, index=True)
     papel = Column(String(20), nullable=False, index=True)
-    status_ativo = Column(Boolean, default=True, index=True)
+    status_pesssoa = Column(Boolean, default=True, index=True)
     senha_hash = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
 
@@ -229,7 +229,7 @@ class Pessoa(Base):
             'cpf': self.cpf,
             'salario': self.salario,
             'papel': self.papel,
-            'status_ativo': self.status_ativo,
+            'status_pesssoa': self.status_pesssoa,
             'email': self.email,
 
         }
