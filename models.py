@@ -190,7 +190,7 @@ class Pessoa(Base):
     id_pessoa = Column(Integer, primary_key=True)
     nome_pessoa = Column(String(20), nullable=False, index=True)
     cpf = Column(String(11), nullable=False, index=True)
-    salario = Column(Integer, nullable=False, index=True)
+    salario = Column(Float, nullable=False, index=True)
     papel = Column(String(20), nullable=False, index=True)
     status_ativo = Column(Boolean, default=True, index=True)
 
