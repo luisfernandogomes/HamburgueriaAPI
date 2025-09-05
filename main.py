@@ -4,7 +4,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 from models import *
-from dateutil.relativedelta import relativedelta
 from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
 from functools import wraps
 
@@ -16,19 +15,19 @@ jwt = JWTManager(app)
 
 
 
-@app.route('/cadastrar_lanche', methods=['POST'])
+@app.route('/lanches', methods=['POST'])
 def cadastrar_lanche():
 
     db_session = local_session()
     try:
         dados_lanche = request.get_json()
 
-        if not 'nome_lanche' in dados_lanche or not 'descricao_lanche' in dados_lanche or not 'disponivel' in dados_lanche:
+        if not 'nome_lanche' in dados_lanche or not 'descricao_lanche' in dados_lanche:
             return jsonify({
                 'error': 'Campo inexistente',
             })
 
-        if dados_lanche['nome_lanche'] == "" or dados_lanche['descricao_lanche'] == "" or dados_lanche['disponivel'] == "":
+        if dados_lanche['nome_lanche'] == "" or dados_lanche['descricao_lanche'] == "":
             return jsonify({
                 "error": "Preencher todos os campos"
             })
@@ -36,11 +35,9 @@ def cadastrar_lanche():
         else:
             nome_lanche = dados_lanche['nome_lanche']
             descricao_lanche = dados_lanche['descricao_lanche']
-            disponivel = dados_lanche['disponivel']
             form_novo_lanche = Lanche(
                 nome_lanche = nome_lanche,
-                descricao_lanche = descricao_lanche,
-                disponivel = disponivel,
+                descricao_lanche = descricao_lanche
             )
             print(form_novo_lanche)
             form_novo_lanche.save(db_session)
@@ -49,7 +46,6 @@ def cadastrar_lanche():
                 "id_lanche": form_novo_lanche.id_lanche,
                 "nome_lanche": nome_lanche,
                 "descricao_lanche": descricao_lanche,
-                "disponivel": disponivel,
             }
 
             return jsonify(resultado), 201
@@ -59,7 +55,7 @@ def cadastrar_lanche():
     finally:
         db_session.close()
 
-@app.route('/cadastrar_insumo', methods=['POST'])
+@app.route('/insumos', methods=['POST'])
 def cadastrar_insumo():
 
     db_session = local_session()
@@ -105,7 +101,7 @@ def cadastrar_insumo():
         db_session.close()
 
 
-@app.route('/cadastrar_entrada', methods=['POST'])
+@app.route('/entradas', methods=['POST'])
 def cadastrar_entrada():
     db_session = local_session()
     try:
@@ -147,7 +143,7 @@ def cadastrar_entrada():
 
 
 @app.route('/categoria_insumo', methods=['POST'])
-def categoria_insumo():
+def listar_categoria_insumo():
     db_session = local_session()
     try:
         dados_categoria_insumo = request.get_json()
@@ -180,7 +176,7 @@ def categoria_insumo():
         db_session.close()
 
 
-@app.route('/listar_lanches', methods=['GET'])
+@app.route('/lanches', methods=['GET'])
 def listar_lanches():
     db_session = local_session()
     try:
@@ -201,7 +197,7 @@ def listar_lanches():
         db_session.close()
 
 
-@app.route('/listar_insumos', methods=['GET'])
+@app.route('/insumos', methods=['GET'])
 def listar_insumos():
     db_session = local_session()
     try:
