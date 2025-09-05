@@ -118,7 +118,7 @@ class Venda(Base):
     id_venda = Column(Integer, primary_key=True)
     data_venda = Column(String(10), nullable=False, index=True)
     valor_venda = Column(Float, nullable=False, index=True)
-    status_concluida = Column(Boolean, default=True, index=True)
+    status_venda = Column(Boolean, default=True, index=True)
 
     def __repr__(self):
         return '<Venda: {} {}>'.format(self.id_venda, self.data_venda)
@@ -144,7 +144,7 @@ class Venda(Base):
             'id_venda': self.id_venda,
             'data_venda': self.data_venda,
             'valor_venda': self.valor_venda,
-            'status_concluida': self.status_concluida,
+            'status_venda': self.status_venda,
         }
         return var_venda
 

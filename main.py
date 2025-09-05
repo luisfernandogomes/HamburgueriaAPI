@@ -107,11 +107,11 @@ def cadastrar_venda():
     try:
         dados_venda = request.get_json()
 
-        if not 'valor_venda' in dados_venda or not 'data_venda' in dados_venda or not 'status_concluida' in dados_venda:
+        if not 'valor_venda' in dados_venda or not 'data_venda' in dados_venda or not 'status_venda' in dados_venda:
             return jsonify({
                 "error": "Campo inexistente",
             })
-        if dados_venda['valor_venda'] == "" or dados_venda['data_venda'] == "" or dados_venda['status_concluida'] == "":
+        if dados_venda['valor_venda'] == "" or dados_venda['data_venda'] == "" or dados_venda['status_venda'] == "":
             return jsonify({
                 "error": "Preencher todos os campos"
             })
@@ -119,12 +119,12 @@ def cadastrar_venda():
         else:
             valor_venda = dados_venda['valor_venda']
             data_venda = dados_venda['data_venda']
-            status_concluida = dados_venda['status_concluida']
+            status_venda = dados_venda['status_venda']
 
             form_nova_venda = Venda(
                 valor_venda = valor_venda,
                 data_venda = data_venda,
-                status_concluida = status_concluida,
+                status_venda = status_venda,
             )
             print(form_nova_venda)
             form_nova_venda.save(db_session)
@@ -133,7 +133,7 @@ def cadastrar_venda():
                 "id_venda": form_nova_venda.id_venda,
                 "valor_venda": valor_venda,
                 "data_venda": data_venda,
-                "status_concluida": status_concluida,
+                "status_venda": status_venda,
                 "success": "venda cadastrada com sucesso",
             }
             return jsonify(resultado), 201
