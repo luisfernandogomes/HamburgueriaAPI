@@ -361,7 +361,7 @@ def editar_lanche(id_lanche):
     try:
         dados_editar_lanche = request.get_json()
 
-        lanche_resultado = local_session.execute(select(Lanche).filter_by(id=int(id_lanche))).scalar()
+        lanche_resultado = local_session.execute(select(Lanche).filter_by(id_lanche=int(id_lanche))).scalar()
         print(lanche_resultado)
 
         if not lanche_resultado:
@@ -369,20 +369,19 @@ def editar_lanche(id_lanche):
                 "error": "Lanche não encontrado"
             }), 400
 
-        if not 'nome_lanche' in dados_editar_lanche or not 'descricao_lanche' in dados_editar_lanche or not 'disponivel' in dados_editar_lanche:
+        if not 'nome_lanche' in dados_editar_lanche or not 'descricao_lanche' in dados_editar_lanche or not 'valor' in dados_editar_lanche:
             return jsonify({
                 'error': 'Campo inexistente',
             }), 400
 
-        if dados_editar_lanche['nome_lanche'] == "" or dados_editar_lanche['descricao_lanche'] == "" or \
-                dados_editar_lanche['disponivel'] == "":
+        if dados_editar_lanche['nome_lanche'] == "" or dados_editar_lanche['descricao_lanche'] == "" or dados_editar_lanche['valor'] == "":
             return jsonify({
                 "error": "Preencher todos os campos"
             }), 400
 
         else:
             lanche_resultado.nome_lanche = dados_editar_lanche['nome_lanche']
-            lanche_resultado.disponivel = dados_editar_lanche['disponivel']
+            lanche_resultado.valor = dados_editar_lanche['valor']
             lanche_resultado.descricao_lanche = dados_editar_lanche['descricao_lanche']
 
             lanche_resultado.save(db_session)
@@ -390,7 +389,7 @@ def editar_lanche(id_lanche):
             resultado = {
                 "id_lanche": lanche_resultado.id_lanche,
                 "nome_lanche": lanche_resultado.nome_lanche,
-                "disponivel": lanche_resultado.disponivel,
+                "valor": lanche_resultado.valor,
                 "descricao_lanche": lanche_resultado.descricao_lanche,
                 "success": "lanche editado com sucesso"
             }
