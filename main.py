@@ -27,7 +27,7 @@ def cadastrar_lanche():
                 'error': 'Campo inexistente',
             })
 
-        if dados_lanche['nome_lanche'] == "" or dados_lanche['descricao_lanche'] == "":
+        if dados_lanche['nome_lanche'] == "" or dados_lanche['descricao_lanche'] == "" or dados_lanche['valor'] == "":
             return jsonify({
                 "error": "Preencher todos os campos"
             })
@@ -35,9 +35,11 @@ def cadastrar_lanche():
         else:
             nome_lanche = dados_lanche['nome_lanche']
             descricao_lanche = dados_lanche['descricao_lanche']
+            valor = dados_lanche['valor']
             form_novo_lanche = Lanche(
                 nome_lanche = nome_lanche,
-                descricao_lanche = descricao_lanche
+                descricao_lanche = descricao_lanche,
+                valor = valor
             )
             print(form_novo_lanche)
             form_novo_lanche.save(db_session)
@@ -46,6 +48,7 @@ def cadastrar_lanche():
                 "id_lanche": form_novo_lanche.id_lanche,
                 "nome_lanche": nome_lanche,
                 "descricao_lanche": descricao_lanche,
+                "valor": valor
             }
 
             return jsonify(resultado), 201
