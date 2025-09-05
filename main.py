@@ -44,7 +44,8 @@ def cadastrar_lanche():
                 "id_lanche": form_novo_lanche.id_lanche,
                 "nome_lanche": nome_lanche,
                 "descricao_lanche": descricao_lanche,
-                "valor": valor
+                "valor": valor,
+                "success":"Cadastrado com sucesso"
             }
 
             return jsonify(resultado), 201
@@ -90,6 +91,7 @@ def cadastrar_insumo():
                 "nome_insumo": nome_insumo,
                 "qtde_insumo": qtd_insumo,
                 "categoria_id": categoria_id,
+                "success": "Insumo cadastrado com sucesso"
             }
 
             return jsonify(resultado), 201
@@ -234,6 +236,7 @@ def listar_lanches():
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
+
 
 @app.route('/insumos', methods=['GET'])
 def listar_insumos():
