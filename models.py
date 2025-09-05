@@ -196,6 +196,7 @@ class Pessoa(Base):
     senha_hash = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
 
+
     def __repr__(self):
         return 'Pessoa: {} {}>'.format(self.id_pessoa, self.nome_pessoa)
 

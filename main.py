@@ -237,6 +237,7 @@ def listar_lanches():
     finally:
         db_session.close()
 
+
 @app.route('/insumos', methods=['GET'])
 def listar_insumos():
     db_session = local_session()
