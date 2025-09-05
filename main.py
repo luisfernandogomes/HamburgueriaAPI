@@ -7,8 +7,6 @@ from models import *
 from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
 from functools import wraps
 
-
-
 app = Flask (__name__)
 app.config['JWT_SECRET_KEY'] = "03050710"
 jwt = JWTManager(app)
@@ -182,7 +180,7 @@ def cadastrar_entrada():
     finally:
         db_session.close()
 
-@app.route('categorias', methods=['POST'])
+@app.route('/categorias', methods=['POST'])
 def cadastrar_categoria():
     db_session = local_session()
     try:
@@ -357,7 +355,7 @@ def get_insumo_id(id_insumo):
         db_session.close()
 
 # EDITAR (PUT)
-@app.route('lanches/<id_lanche>', methods=['PUT'])
+@app.route('/lanches/<id_lanche>', methods=['PUT'])
 def editar_lanche(id_lanche):
     db_session = local_session()
     try:
@@ -409,7 +407,7 @@ def editar_lanche(id_lanche):
     finally:
         db_session.close()
 
-@app.route('categorias/<id_categoria>', methods=['PUT'])
+@app.route('/categorias/<id_categoria>', methods=['PUT'])
 def editar_categoria(id_categoria):
     db_session = local_session()
     try:
@@ -456,7 +454,7 @@ def editar_categoria(id_categoria):
     finally:
         db_session.close()
 
-@app.route('pessoas/<id_pessoa>', methods=['PUT'])
+@app.route('/pessoas/<id_pessoa>', methods=['PUT'])
 def editar_pessoa(id_pessoa):
     db_session = local_session()
     try:
@@ -511,7 +509,7 @@ def editar_pessoa(id_pessoa):
     finally:
         db_session.close()
 
-@app.route('insumos/<id_insumo>', methods=['PUT'])
+@app.route('/insumos/<id_insumo>', methods=['PUT'])
 def editar_insumo(id_insumo):
     db_session = local_session()
     try:
