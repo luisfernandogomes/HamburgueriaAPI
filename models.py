@@ -49,7 +49,7 @@ class Insumo(Base):
     nome_insumo = Column(String(20), nullable=False, index=True)
     qtde_insumo = Column(Integer, nullable=False, index=True)
     validade = Column(String(10), index=True)
-    categoria_id = Column(Integer, ForeignKey('categorias.id_categoria_insumo'), nullable=False)
+    categoria_id = Column(Integer, ForeignKey('categorias_insumos.id_categoria_insumo'), nullable=False)
 
     def __repr__(self):
         return '<Insumo: {} {}>'.format(self.id_insumo, self.nome_insumo)
