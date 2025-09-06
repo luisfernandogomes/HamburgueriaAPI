@@ -49,7 +49,7 @@ class Insumo(Base):
     __tablename__ = 'insumos'
     id_insumo = Column(Integer, primary_key=True)
     nome_insumo = Column(String(20), nullable=False, index=True)
-    qtde_insumo = Column(Integer, nullable=False, index=True)
+    qtd_insumo = Column(Integer, nullable=False, index=True)
     validade = Column(String(10), index=True)
     categoria_id = Column(Integer, ForeignKey('categorias.id_categoria'), nullable=False)
 
@@ -76,7 +76,7 @@ class Insumo(Base):
         var_insumo = {
             'id_insumo': self.id_insumo,
             'nome_insumo': self.nome_insumo,
-            'qtde_insumo': self.qtde_insumo,
+            'qtd_insumo': self.qtd_insumo,
             'validade': self.validade,
             'categoria_id': self.categoria_id,
         }
@@ -152,38 +152,37 @@ class Entrada(Base):
     __tablename__ = 'entradas'
     id_entrada = Column(Integer, primary_key=True)
     data_entrada = Column(String(10), nullable=False, index=True)
-    valor_entrada = Column(Float, nullable=False, index=True)
-    qtde_entrada = Column(Integer, nullable=False, index=True)
+    qtd_entrada = Column(Integer, nullable=False, index=True)
+    valor_unitario = Column(Float, nullable=False)  # preço no momento da compra
+    valor_entrada = Column(Float, nullable=False, index=True)  # calculado
     validade_lote = Column(String(10), nullable=False, index=True)
 
+    # relacionamento com Insumo
+    insumo_id = Column(Integer, ForeignKey('insumos.id_insumo'), nullable=False)
+
     def __repr__(self):
-        return '<Entrada: {} {}>'.format(self.id_entrada, self.data_entrada)
+        return f'<Entrada: {self.id_entrada} {self.data_entrada}>'
 
     def save(self, db_session):
         try:
+            # garante que o valor total seja sempre consistente
+            self.valor_entrada = self.qtd_entrada * self.valor_unitario
             db_session.add(self)
             db_session.commit()
         except:
             db_session.rollback()
             raise
 
-    def delete(self, db_session):
-        try:
-            db_session.delete(self)
-            db_session.commit()
-        except:
-            db_session.rollback()
-            raise
-
     def serialize(self):
-        var_entrada = {
+        return {
             'id_entrada': self.id_entrada,
             'data_entrada': self.data_entrada,
+            'qtd_entrada': self.qtd_entrada,
+            'valor_unitario': self.valor_unitario,
             'valor_entrada': self.valor_entrada,
-            'qtde_entrada': self.qtde_entrada,
             'validade_lote': self.validade_lote,
+            'insumo_id': self.insumo_id
         }
-        return var_entrada
 
 class Pessoa(Base):
     __tablename__ = 'pessoas'
@@ -192,7 +191,7 @@ class Pessoa(Base):
     cpf = Column(String(11), nullable=False, index=True)
     salario = Column(Float, nullable=False, index=True)
     papel = Column(String(20), nullable=False, index=True)
-    status_pesssoa = Column(Boolean, default=True, index=True)
+    status_pessoa = Column(Boolean, default=True, index=True)
     senha_hash = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
 
@@ -229,7 +228,7 @@ class Pessoa(Base):
             'cpf': self.cpf,
             'salario': self.salario,
             'papel': self.papel,
-            'status_pesssoa': self.status_pesssoa,
+            'status_pessoa': self.status_pessoa,
             'email': self.email,
 
         }

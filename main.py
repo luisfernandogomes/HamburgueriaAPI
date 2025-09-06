@@ -1,4 +1,3 @@
-from sys import exception
 from flask import Flask, jsonify, render_template, request, redirect, url_for, flash
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
@@ -18,15 +17,13 @@ def cadastrar_lanche():
     try:
         dados_lanche = request.get_json()
 
-        if not 'nome_lanche' in dados_lanche or not 'descricao_lanche' in dados_lanche or not 'valor_lanche' in dados_lanche:
-            return jsonify({
-                'error': 'Campo inexistente',
-            })
+        campos_obrigatorios = ["nome_lanche", "descricao_lanche", "valor_lanche"]
 
-        if dados_lanche['nome_lanche'] == "" or dados_lanche['descricao_lanche'] == "" or dados_lanche['valor_lanche'] == "":
-            return jsonify({
-                "error": "Preencher todos os campos"
-            })
+        if not all(campo in dados_lanche for campo in campos_obrigatorios):
+            return jsonify({"error": "Campo inexistente"}), 400
+
+        if any(not dados_lanche[campo] for campo in campos_obrigatorios):
+            return jsonify({"error": "Preencher todos os campos"}), 400
 
         else:
             nome_lanche = dados_lanche['nome_lanche']
@@ -61,15 +58,13 @@ def cadastrar_insumo():
     try:
         dados_insumo = request.get_json()
 
-        if not 'nome_insumo' in dados_insumo or not 'qtd_insumo' in dados_insumo or not 'validade' in dados_insumo or not 'categoria_id' in dados_insumo:
-            return jsonify({
-                "error": "Campo inexistente",
-            }), 400
+        campos_obrigatorios = ["nome_insumo", "qtd_insumo", "validade", "categoria_id"]
 
-        if dados_insumo['nome_insumo'] == "" or dados_insumo['qtd_insumo'] == "" or dados_insumo['validade'] == "" or dados_insumo['categoria_id'] == "":
-            return jsonify({
-                "error": "Preencher todos os campos"
-        }), 400
+        if not all(campo in dados_insumo for campo in campos_obrigatorios):
+            return jsonify({"error": "Campo inexistente"}), 400
+
+        if any(not dados_insumo[campo] for campo in campos_obrigatorios):
+            return jsonify({"error": "Preencher todos os campos"}), 400
 
         else:
             nome_insumo = dados_insumo['nome_insumo']
@@ -78,7 +73,7 @@ def cadastrar_insumo():
             categoria_id = dados_insumo['categoria_id']
             form_novo_insumo = Insumo(
                 nome_insumo = nome_insumo,
-                qtde_insumo = qtd_insumo,
+                qtd_insumo = qtd_insumo,
                 validade = validade,
                 categoria_id = categoria_id,
             )
@@ -113,7 +108,7 @@ def cadastrar_pessoa():
         if not all(campo in dados_pessoa for campo in campos_obrigatorios):
             return jsonify({"error": "Campo inexistente"}), 400
 
-        if any(dados_pessoa[campo] == "" for campo in campos_obrigatorios):
+        if any(not dados_pessoa[campo] for campo in campos_obrigatorios):
             return jsonify({"error": "Preencher todos os campos"}), 400
 
         else:
@@ -157,14 +152,13 @@ def cadastrar_venda():
     try:
         dados_venda = request.get_json()
 
-        if not 'valor_venda' in dados_venda or not 'data_venda' in dados_venda or not 'status_venda' in dados_venda:
-            return jsonify({
-                "error": "Campo inexistente",
-            })
-        if dados_venda['valor_venda'] == "" or dados_venda['data_venda'] == "" or dados_venda['status_venda'] == "":
-            return jsonify({
-                "error": "Preencher todos os campos"
-            })
+        campos_obrigatorios = ["valor_venda", "data_venda", "status_venda"]
+
+        if not all(campo in dados_venda for campo in campos_obrigatorios):
+            return jsonify({"error": "Campo inexistente"}), 400
+
+        if any(not dados_venda[campo] for campo in campos_obrigatorios):
+            return jsonify({"error": "Preencher todos os campos"}), 400
 
         else:
             valor_venda = dados_venda['valor_venda']
@@ -192,45 +186,48 @@ def cadastrar_venda():
     finally:
         db_session.close()
 
-@app.route('/entradas', methods=['POST'])
+
+@app.route("/entradas", methods=["POST"])
 def cadastrar_entrada():
-    db_session = local_session()
+    dados = request.json
+
+    # validação de campos obrigatórios
+    campos_obrigatorios = ["insumo_id", "qtd_entrada", "valor_unitario", "validade_lote", "data_entrada"]
+    if not all(campo in dados for campo in campos_obrigatorios):
+        return jsonify({"error": "Campo inexistente"}), 400
+
+    if any(dados[campo] == "" for campo in campos_obrigatorios):
+        return jsonify({"error": "Preencher todos os campos"}), 400
+
+    # verificar se insumo existe
+    insumo = local_session.query(Insumo).filter_by(id_insumo=dados["insumo_id"]).first()
+    if not insumo:
+        return jsonify({"error": "Insumo não encontrado"}), 404
+
     try:
-        dados_entrada = request.get_json()
+        qtd = int(dados["qtd_entrada"])
+        valor_unitario = float(dados["valor_unitario"])
+    except ValueError:
+        return jsonify({"error": "Quantidade e valor devem ser numéricos"}), 400
 
-        if not 'data_entrada' in dados_entrada or not 'valor_entrada' in dados_entrada or not 'qtde_entrada' in dados_entrada or not 'validade_lote' in dados_entrada:
-            return jsonify({
-                "error": "Campo inexistente",
-            })
-        if dados_entrada['data_entrada'] == "" or dados_entrada['valor_entrada'] == "" or dados_entrada['qtde_entrada'] == "" or dados_entrada['validade_lote'] == "":
-            return jsonify({
-                "error": "Preencher todos os campos"
-            })
-        else:
-            data_entrada = dados_entrada['data_entrada']
-            valor_entrada = dados_entrada['valor_entrada']
-            qtde_entrada = dados_entrada['qtde_entrada']
-            validade_lote = dados_entrada['validade_lote']
-            form_novo_entrada = Entrada(
-                data_entrada = data_entrada,
-                valor_entrada = valor_entrada,
-                qtde_entrada = qtde_entrada,
-            )
-            print(form_novo_entrada)
-            form_novo_entrada.save(db_session)
+    if qtd <= 0 or valor_unitario <= 0:
+        return jsonify({"error": "Quantidade e valor devem ser maiores que zero"}), 400
 
-            resultado = {
-                "id_entrada": form_novo_entrada.id_entrada,
-                "valor_entrada": valor_entrada,
-                "qtde_entrada": qtde_entrada,
-                "validade_lote": validade_lote
-            }
-            return jsonify(resultado), 201
+    # criar entrada
+    nova_entrada = Entrada(
+        data_entrada=dados["data_entrada"],  # ex: "2025-09-05"
+        qtd_entrada=qtd,
+        valor_unitario=valor_unitario,
+        validade_lote=dados["validade_lote"],
+        insumo_id=insumo.id_insumo
+    )
 
+    try:
+        nova_entrada.save(local_session)
     except Exception as e:
-        return jsonify({"error": str(e)})
-    finally:
-        db_session.close()
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify(nova_entrada.serialize()), 201
 
 @app.route('/categorias', methods=['POST'])
 def cadastrar_categoria():
@@ -376,7 +373,8 @@ def listar_pessoas():
             print(pessoas[-1])
 
         return jsonify({
-            "pessoas": pessoas
+            "pessoas": pessoas,
+            "success":"Listado com sucesso"
         })
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -398,13 +396,13 @@ def get_insumo_id(id_insumo):
             "sucess": "Insumo encontrado com sucesso",
             "id_insumo": insumo.id_insumo,
             "nome_insumo": insumo.nome_insumo,
-            "qtde_insumo": insumo.qtde_insumo,
+            "qtd_insumo": insumo.qtd_insumo,
             "validade": insumo.validade,
             "categoria_id": insumo.categoria_id,
         })
     except Exception as e:
         return jsonify({
-            "error": "Valor invalido"
+            "error": "Valor inválido"
         })
     finally:
         db_session.close()
@@ -416,23 +414,19 @@ def editar_lanche(id_lanche):
     try:
         dados_editar_lanche = request.get_json()
 
-        lanche_resultado = local_session.execute(select(Lanche).filter_by(id_lanche=int(id_lanche))).scalar()
+        lanche_resultado = db_session.execute(select(Lanche).filter_by(id_lanche=int(id_lanche))).scalar()
         print(lanche_resultado)
 
         if not lanche_resultado:
-            return jsonify({
-                "error": "Lanche não encontrado"
-            }), 400
+            return jsonify({"error": "Lanche não encontrado"}), 400
 
-        if not 'nome_lanche' in dados_editar_lanche or not 'descricao_lanche' in dados_editar_lanche or not 'valor_lanche' in dados_editar_lanche:
-            return jsonify({
-                'error': 'Campo inexistente',
-            }), 400
+        campos_obrigatorios = ["nome_lanche", "descricao_lanche", "valor_lanche"]
 
-        if dados_editar_lanche['nome_lanche'] == "" or dados_editar_lanche['descricao_lanche'] == "" or dados_editar_lanche['valor_lanche'] == "":
-            return jsonify({
-                "error": "Preencher todos os campos"
-            }), 400
+        if not all(campo in dados_editar_lanche for campo in campos_obrigatorios):
+            return jsonify({"error": "Campo inexistente"}), 400
+
+        if any(not dados_editar_lanche[campo] for campo in campos_obrigatorios):
+            return jsonify({"error": "Preencher todos os campos"}), 400
 
         else:
             lanche_resultado.nome_lanche = dados_editar_lanche['nome_lanche']
@@ -452,7 +446,7 @@ def editar_lanche(id_lanche):
 
     except ValueError:
         return jsonify({
-            "error": "Valor inserido invalido"
+            "error": "Valor inserido inválido"
         }), 400
 
     except Exception as e:
@@ -466,7 +460,7 @@ def editar_categoria(id_categoria):
     try:
         dados_editar_categoria = request.get_json()
 
-        categoria_resultado = local_session.execute(select(Categoria).filter_by(id_categoria=int(id_categoria))).scalar()
+        categoria_resultado = db_session.execute(select(Categoria).filter_by(id_categoria=int(id_categoria))).scalar()
         print(categoria_resultado)
 
         if not categoria_resultado:
@@ -499,7 +493,7 @@ def editar_categoria(id_categoria):
 
     except ValueError:
         return jsonify({
-            "error": "Valor inserido invalido"
+            "error": "Valor inserido inválido"
         }),400
 
     except Exception as e:
@@ -513,48 +507,46 @@ def editar_pessoa(id_pessoa):
     try:
         dados_editar_pessoa = request.get_json()
 
-        pessoa_resultado = local_session.execute(select(Pessoa).filter_by(id=int(id_pessoa))).scalar()
+        pessoa_resultado = db_session.execute(select(Pessoa).filter_by(id_pessoa=int(id_pessoa))).scalar()
         print(pessoa_resultado)
 
         if not pessoa_resultado:
-            return jsonify({
-                "error": "Pessoa não encontrada"
-            }), 400
+            return jsonify({"error": "Pessoa não encontrada"}), 400
 
-        if not 'nome' in dados_editar_pessoa or not 'salario' in dados_editar_pessoa or not 'cpf' in dados_editar_pessoa or not 'papel' in dados_editar_pessoa or not 'status_ativo' in dados_editar_pessoa:
-            return jsonify({
-                'error': 'Campo inexistente'
-            }), 400
+        campos_obrigatorios = ["nome_pessoa", "cpf", "salario", "papel", "senha_hash", "email"]
 
-        if dados_editar_pessoa['nome'] == "" or dados_editar_pessoa['salario'] == "" or dados_editar_pessoa['cpf'] == "" or dados_editar_pessoa['status_ativo'] == "" or dados_editar_pessoa['papel'] == "":
-            return jsonify({
-                "error": "Preencher todos os campos"
-            }), 400
+        if not all(campo in dados_editar_pessoa for campo in campos_obrigatorios):
+            return jsonify({"error": "Campo inexistente"}), 400
+
+        if any(not dados_editar_pessoa[campo] for campo in campos_obrigatorios):
+            return jsonify({"error": "Preencher todos os campos"}), 400
 
         else:
-            pessoa_resultado.nome = dados_editar_pessoa['nome']
-            pessoa_resultado.salario = dados_editar_pessoa['salario']
+            pessoa_resultado.nome_pessoa = dados_editar_pessoa['nome_pessoa']
             pessoa_resultado.cpf = dados_editar_pessoa['cpf']
-            pessoa_resultado.status_ativo = dados_editar_pessoa['status_ativo']
+            pessoa_resultado.salario = dados_editar_pessoa['salario']
             pessoa_resultado.papel = dados_editar_pessoa['papel']
+            pessoa_resultado.senha_hash = dados_editar_pessoa['senha_hash']
+            pessoa_resultado.email = dados_editar_pessoa['email']
 
             pessoa_resultado.save(db_session)
 
-            resultado = {
+            dict = {
                 "id_pessoa": pessoa_resultado.id_pessoa,
-                "nome": pessoa_resultado.nome,
-                "salario": pessoa_resultado.salario,
-                "status_ativos": pessoa_resultado.status_ativos,
+                "nome_pessoa": pessoa_resultado.nome_pessoa,
                 "cpf": pessoa_resultado.cpf,
+                "salario": pessoa_resultado.salario,
                 "papel": pessoa_resultado.papel,
-                "success": "pessoa editado com sucesso"
+                "senha_hash": pessoa_resultado.senha_hash,
+                "email": pessoa_resultado.email,
             }
+            resultado = {"success": "Pessoa editada com sucesso", "pessoas":dict}
 
             return jsonify(resultado), 200
 
     except ValueError:
         return jsonify({
-            "error": "Valor inserido invalido"
+            "error": "Valor inserido inválido"
         })
 
     except Exception as e:
@@ -568,29 +560,26 @@ def editar_insumo(id_insumo):
     try:
         dados_editar_insumo = request.get_json()
 
-        insumo_resultado = local_session.execute(select(Insumo).filter_by(id_insumo=int(id_insumo))).scalar()
+        insumo_resultado = db_session.execute(select(Insumo).filter_by(id_insumo=int(id_insumo))).scalar()
         print(insumo_resultado)
 
         if not insumo_resultado:
-            return jsonify({
-                "error": "Insumo não encontrada"
-            }), 400
+            return jsonify({"error": "Insumo não encontrado"}), 400
 
-        if not 'nome_insumo' in dados_editar_insumo or not "qtd_insumo" in dados_editar_insumo or not "validade" in dados_editar_insumo or not "categoria_id" in dados_editar_insumo:
-            return jsonify({
-                "error": "Campo inexistente"
-            }), 400
+        campos_obrigatorios = ["nome_insumo", "qtd_insumo", "validade", "categoria_id"]
 
-        if dados_editar_insumo['nome_insumo'] == "" or dados_editar_insumo['qtd_insumo'] == "" or dados_editar_insumo['categoria_id'] == "" or dados_editar_insumo['validade'] == "":
-            return jsonify({
-                "error": "Preencher todos os campos"
-            }), 400
+        if not all(campo in dados_editar_insumo for campo in campos_obrigatorios):
+            return jsonify({"error": "Campo inexistente"}), 400
+
+        if any(not dados_editar_insumo[campo] for campo in campos_obrigatorios):
+
+            return jsonify({"error": "Preencher todos os campos"}), 400
 
         else:
             insumo_resultado.nome_insumo = dados_editar_insumo['nome_insumo']
             insumo_resultado.categoria_id = dados_editar_insumo['categoria_id']
             insumo_resultado.validade = dados_editar_insumo['validade']
-            insumo_resultado.qtde_insumo = dados_editar_insumo['qtd_insumo']
+            insumo_resultado.qtd_insumo = dados_editar_insumo['qtd_insumo']
 
             insumo_resultado.save(db_session)
 
@@ -599,15 +588,15 @@ def editar_insumo(id_insumo):
                 "nome_insumo": insumo_resultado.nome_insumo,
                 "categoria_id": insumo_resultado.categoria_id,
                 "validade": insumo_resultado.validade,
-                "qtd_insumo": insumo_resultado.qtde_insumo,
+                "qtd_insumo": insumo_resultado.qtd_insumo,
             }
-            resultado = {"success": "insumo editado com sucesso", "insumos": dicio}
+            resultado = {"success": "Insumo editado com sucesso", "insumos": dicio}
 
             return jsonify(resultado), 200
 
     except ValueError:
         return jsonify({
-            "error": "Valor inserido invalido"
+            "error": "Valor inserido inválido"
         })
 
     except Exception as e:
