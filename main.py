@@ -556,16 +556,8 @@ def editar_pessoa(id_pessoa):
 
             pessoa_resultado.save(db_session)
 
-            dict = {
-                "id_pessoa": pessoa_resultado.id_pessoa,
-                "nome_pessoa": pessoa_resultado.nome_pessoa,
-                "cpf": pessoa_resultado.cpf,
-                "salario": pessoa_resultado.salario,
-                "papel": pessoa_resultado.papel,
-                "senha_hash": pessoa_resultado.senha_hash,
-                "email": pessoa_resultado.email,
-            }
-            resultado = {"success": "Pessoa editada com sucesso", "pessoas": dict}
+            dicio = pessoa_resultado.serialize()
+            resultado = {"success": "Pessoa editada com sucesso", "pessoas": dicio}
 
             return jsonify(resultado), 200
 
