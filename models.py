@@ -155,6 +155,7 @@ class Venda(Base):
             "qtd_lanches": self.qtd_lanches,
             "status_venda": self.status_venda,
             "lanche_id": self.lanche_id,
+            "pessoa_id": self.pessoa_id,
         }
         return var_venda
 
