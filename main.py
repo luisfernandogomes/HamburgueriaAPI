@@ -6,13 +6,13 @@ from models import *
 from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
 from functools import wraps
 
-app = Flask (__name__)
+app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = "03050710"
 jwt = JWTManager(app)
 
+
 @app.route('/lanches', methods=['POST'])
 def cadastrar_lanche():
-
     db_session = local_session()
     try:
         dados_lanche = request.get_json()
@@ -30,19 +30,14 @@ def cadastrar_lanche():
             descricao_lanche = dados_lanche['descricao_lanche']
             valor_lanche = dados_lanche['valor_lanche']
             form_novo_lanche = Lanche(
-                nome_lanche = nome_lanche,
-                descricao_lanche = descricao_lanche,
-                valor_lanche = valor_lanche
+                nome_lanche=nome_lanche,
+                descricao_lanche=descricao_lanche,
+                valor_lanche=valor_lanche
             )
             print(form_novo_lanche)
             form_novo_lanche.save(db_session)
-            dicio = {
-                "id_lanche": form_novo_lanche.id_lanche,
-                "nome_lanche": nome_lanche,
-                "descricao_lanche": descricao_lanche,
-                "valor_lanche": valor_lanche,
-            }
-            resultado = {"success":"Cadastrado com sucesso", "lanches": dicio}
+            dicio = form_novo_lanche.serialize()
+            resultado = {"success": "Cadastrado com sucesso", "lanches": dicio}
 
             return jsonify(resultado), 201
 
@@ -51,9 +46,9 @@ def cadastrar_lanche():
     finally:
         db_session.close()
 
+
 @app.route('/insumos', methods=['POST'])
 def cadastrar_insumo():
-
     db_session = local_session()
     try:
         dados_insumo = request.get_json()
@@ -71,20 +66,14 @@ def cadastrar_insumo():
             validade = dados_insumo['validade']
             categoria_id = dados_insumo['categoria_id']
             form_novo_insumo = Insumo(
-                nome_insumo = nome_insumo,
-                validade = validade,
-                categoria_id = categoria_id,
+                nome_insumo=nome_insumo,
+                validade=validade,
+                categoria_id=categoria_id,
             )
             print(form_novo_insumo)
             form_novo_insumo.save(db_session)
 
-            dicio = {
-                "id_insumo": form_novo_insumo.id_insumo,
-                "nome_insumo": nome_insumo,
-                "qtd_insumo": form_novo_insumo.qtd_insumo,
-                "validade": validade,
-                "categoria_id": categoria_id,
-            }
+            dicio = form_novo_insumo.serialize()
             resultado = {"success": "Insumo cadastrado com sucesso", "insumos": dicio}
 
             return jsonify(resultado), 201
@@ -94,9 +83,9 @@ def cadastrar_insumo():
     finally:
         db_session.close()
 
+
 @app.route('/pessoas', methods=['POST'])
 def cadastrar_pessoa():
-
     db_session = local_session()
     try:
         dados_pessoa = request.get_json()
@@ -118,23 +107,17 @@ def cadastrar_pessoa():
             email = dados_pessoa['email']
 
             form_nova_pessoa = Pessoa(
-                nome_pessoa = nome_pessoa,
-                cpf = cpf,
-                salario = salario,
-                papel = papel,
-                senha_hash = senha_hash,
-                email = email,
+                nome_pessoa=nome_pessoa,
+                cpf=cpf,
+                salario=salario,
+                papel=papel,
+                senha_hash=senha_hash,
+                email=email,
             )
             print(form_nova_pessoa)
             form_nova_pessoa.save(db_session)
 
-            dicio = {
-                'nome_pessoa':nome_pessoa,
-                'cpf':cpf,
-                'salario':salario,
-                'papel':papel,
-                'email':email,
-            }
+            dicio = form_nova_pessoa.serialize()
             resultado = {"success": "Pessoa cadastrada com sucesso", "Pessoas": dicio}
 
             return jsonify(resultado), 201
@@ -143,6 +126,7 @@ def cadastrar_pessoa():
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
+
 
 @app.route('/vendas', methods=['POST'])
 def cadastrar_venda():
@@ -164,20 +148,15 @@ def cadastrar_venda():
             status_venda = dados_venda['status_venda']
 
             form_nova_venda = Venda(
-                valor_venda = valor_venda,
-                data_venda = data_venda,
-                status_venda = status_venda,
+                valor_venda=valor_venda,
+                data_venda=data_venda,
+                status_venda=status_venda,
             )
             print(form_nova_venda)
             form_nova_venda.save(db_session)
 
-            dicio = {
-                "id_venda": form_nova_venda.id_venda,
-                "valor_venda": valor_venda,
-                "data_venda": data_venda,
-                "status_venda": status_venda,
-            }
-            resultado = {"success": "venda cadastrada com sucesso","vendas":dicio}
+            dicio = form_nova_venda.serialize()
+            resultado = {"success": "venda cadastrada com sucesso", "vendas": dicio}
             return jsonify(resultado), 201
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -190,7 +169,7 @@ def cadastrar_entrada():
     dados = request.json
 
     # validação de campos obrigatórios
-    campos_obrigatorios = ["insumo_id", "qtd_entrada", "valor_unitario", "validade_lote", "data_entrada"]
+    campos_obrigatorios = ["insumo_id", "qtd_entrada", "valor_unitario", "validade_lote", "data_entrada", "nota_fiscal"]
     if not all(campo in dados for campo in campos_obrigatorios):
         return jsonify({"error": "Campo inexistente"}), 400
 
@@ -203,6 +182,7 @@ def cadastrar_entrada():
         return jsonify({"error": "Insumo não encontrado"}), 404
 
     try:
+        nota_fiscal = dados["nota_fiscal"]
         qtd = int(dados["qtd_entrada"])
         valor_unitario = float(dados["valor_unitario"])
     except ValueError:
@@ -213,6 +193,7 @@ def cadastrar_entrada():
 
     # criar entrada
     nova_entrada = Entrada(
+        nota_fiscal=nota_fiscal,
         data_entrada=dados["data_entrada"],  # ex: "2025-09-05"
         qtd_entrada=qtd,
         valor_unitario=valor_unitario,
@@ -222,10 +203,14 @@ def cadastrar_entrada():
 
     try:
         nova_entrada.save(local_session)
+
+        dicio = nova_entrada.serialize()
+        resultado = {"success": "venda cadastrada com sucesso", "vendas": dicio}
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    return jsonify(nova_entrada.serialize()), 201
+    return jsonify(resultado), 201
+
 
 @app.route('/categorias', methods=['POST'])
 def cadastrar_categoria():
@@ -244,15 +229,12 @@ def cadastrar_categoria():
         else:
             nome_categoria = dados_categoria['nome_categoria']
             form_nova_categoria = Categoria(
-                nome_categoria = nome_categoria,
+                nome_categoria=nome_categoria,
             )
             print(form_nova_categoria)
             form_nova_categoria.save(db_session)
 
-            dicio = {
-                "id_categoria": form_nova_categoria.id_categoria,
-                "nome_categoria": nome_categoria,
-            }
+            dicio = form_nova_categoria.serialize()
             resultado = {"success": "Categoria cadastrada com sucesso", "categorias": dicio}
 
             return jsonify(resultado), 201
@@ -260,6 +242,7 @@ def cadastrar_categoria():
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
+
 
 # LISTAR (GET)
 @app.route('/lanches', methods=['GET'])
@@ -283,6 +266,7 @@ def listar_lanches():
     finally:
         db_session.close()
 
+
 @app.route('/insumos', methods=['GET'])
 def listar_insumos():
     db_session = local_session()
@@ -303,6 +287,7 @@ def listar_insumos():
     finally:
         db_session.close()
 
+
 @app.route('/categorias', methods=['GET'])
 def listar_categorias():
     db_session = local_session()
@@ -322,6 +307,7 @@ def listar_categorias():
     finally:
         db_session.close()
 
+
 @app.route('/entradas', methods=['GET'])
 def listar_entradas():
     db_session = local_session()
@@ -333,12 +319,14 @@ def listar_entradas():
             entradas.append(n.serialize())
             print(entradas[-1])
         return jsonify({
-            "entradas": entradas
+            "entradas": entradas,
+            "success": "Listado com sucesso",
         })
     except Exception as e:
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
+
 
 @app.route('/vendas', methods=['GET'])
 def listar_vendas():
@@ -359,6 +347,7 @@ def listar_vendas():
     finally:
         db_session.close()
 
+
 @app.route('/pessoas', methods=['GET'])
 def listar_pessoas():
     db_session = local_session()
@@ -372,12 +361,13 @@ def listar_pessoas():
 
         return jsonify({
             "pessoas": pessoas,
-            "success":"Listado com sucesso"
+            "success": "Listado com sucesso"
         })
     except Exception as e:
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
+
 
 @app.route('/get_insumo_id/<id_insumo>', methods=['GET'])
 def get_insumo_id(id_insumo):
@@ -387,7 +377,7 @@ def get_insumo_id(id_insumo):
 
         if not insumo:
             return jsonify({
-                "error":"Insumo encontrado"
+                "error": "Insumo encontrado"
             })
 
         return jsonify({
@@ -404,6 +394,7 @@ def get_insumo_id(id_insumo):
         })
     finally:
         db_session.close()
+
 
 # EDITAR (PUT)
 @app.route('/lanches/<id_lanche>', methods=['PUT'])
@@ -432,12 +423,7 @@ def editar_lanche(id_lanche):
             lanche_resultado.descricao_lanche = dados_editar_lanche['descricao_lanche']
 
             lanche_resultado.save(db_session)
-            dicio = {
-                "id_lanche": lanche_resultado.id_lanche,
-                "nome_lanche": lanche_resultado.nome_lanche,
-                "valor_lanche": lanche_resultado.valor_lanche,
-                "descricao_lanche": lanche_resultado.descricao_lanche,
-            }
+            dicio = lanche_resultado.serialize()
             resultado = {"success": "lanche editado com sucesso", "lanches": dicio}
 
             return jsonify(resultado), 201
@@ -451,6 +437,7 @@ def editar_lanche(id_lanche):
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
+
 
 @app.route('/insumos/<id_insumo>', methods=['PUT'])
 def editar_insumo(id_insumo):
@@ -478,12 +465,7 @@ def editar_insumo(id_insumo):
             insumo_resultado.categoria_id = dados_editar_insumo['categoria_id']
 
             insumo_resultado.save(db_session)
-            dicio = {
-                "id_insumo": insumo_resultado.id_insumo,
-                "nome_insumo": insumo_resultado.nome_insumo,
-                "validade": insumo_resultado.validade,
-                "categoria_id": insumo_resultado.categoria_id,
-            }
+            dicio = insumo_resultado.serialize()
             resultado = {"success": "insumo editado com sucesso", "insumos": dicio}
 
             return jsonify(resultado), 201
@@ -498,6 +480,7 @@ def editar_insumo(id_insumo):
     finally:
         db_session.close()
 
+
 @app.route('/categorias/<id_categoria>', methods=['PUT'])
 def editar_categoria(id_categoria):
     db_session = local_session()
@@ -509,12 +492,12 @@ def editar_categoria(id_categoria):
 
         if not categoria_resultado:
             return jsonify({
-                "error":"Categoria não encontrada"
+                "error": "Categoria não encontrada"
             })
 
         if not 'nome_categoria' in dados_editar_categoria:
             return jsonify({
-                "error":"Campo inexistente"
+                "error": "Campo inexistente"
             }), 400
 
         if dados_editar_categoria['nome_categoria'] == "":
@@ -527,23 +510,21 @@ def editar_categoria(id_categoria):
 
             categoria_resultado.save(db_session)
 
-            dicio = {
-                "id_categoria": categoria_resultado.id_categoria,
-                "nome_categoria": categoria_resultado.nome_categoria,
-            }
-            resultado = {"success": "categoria editado com sucesso","categorias": dicio}
+            dicio = categoria_resultado.serialize()
+            resultado = {"success": "categoria editado com sucesso", "categorias": dicio}
 
             return jsonify(resultado), 200
 
     except ValueError:
         return jsonify({
             "error": "Valor inserido inválido"
-        }),400
+        }), 400
 
     except Exception as e:
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
+
 
 @app.route('/pessoas/<id_pessoa>', methods=['PUT'])
 def editar_pessoa(id_pessoa):
@@ -584,7 +565,7 @@ def editar_pessoa(id_pessoa):
                 "senha_hash": pessoa_resultado.senha_hash,
                 "email": pessoa_resultado.email,
             }
-            resultado = {"success": "Pessoa editada com sucesso", "pessoas":dict}
+            resultado = {"success": "Pessoa editada com sucesso", "pessoas": dict}
 
             return jsonify(resultado), 200
 
@@ -597,6 +578,7 @@ def editar_pessoa(id_pessoa):
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
+
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5000)
