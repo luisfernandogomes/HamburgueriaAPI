@@ -134,7 +134,7 @@ def cadastrar_venda():
     try:
         dados_venda = request.get_json()
 
-        campos_obrigatorios = ["valor_venda", "data_venda", "status_venda"]
+        campos_obrigatorios = ["qtd_lanches", "data_venda", "lanche_id", "pessoa_id"]
 
         if not all(campo in dados_venda for campo in campos_obrigatorios):
             return jsonify({"error": "Campo inexistente"}), 400
@@ -142,15 +142,30 @@ def cadastrar_venda():
         if any(not dados_venda[campo] for campo in campos_obrigatorios):
             return jsonify({"error": "Preencher todos os campos"}), 400
 
+        # verificar se lanche existe
+        lanche = local_session.query(Lanche).filter_by(id_lanche=dados_venda["lanche_id"]).first()
+        # verificar se pessoa existe
+        pessoa = local_session.query(Pessoa).filter_by(id_pessoa=dados_venda["pessoa_id"]).first()
+        if not lanche:
+            return jsonify({"error": "Lanche não encontrado"}), 404
+        if not pessoa:
+            return jsonify({"error": "Pessoa não encontrado"}), 404
         else:
-            valor_venda = dados_venda['valor_venda']
+            lanche_id = dados_venda["lanche_id"]
+            pessoa_id = dados_venda["pessoa_id"]
+            valor_unitario = float(lanche.valor_lanche)
+            qtd_lanches = dados_venda['qtd_lanches']
+            valor_venda = float(qtd_lanches * valor_unitario)
             data_venda = dados_venda['data_venda']
-            status_venda = dados_venda['status_venda']
+
 
             form_nova_venda = Venda(
+                lanche_id=lanche_id,
+                pessoa_id=pessoa_id,
+                valor_unitario=valor_unitario,
+                qtd_lanches=qtd_lanches,
                 valor_venda=valor_venda,
-                data_venda=data_venda,
-                status_venda=status_venda,
+                data_venda=data_venda
             )
             print(form_nova_venda)
             form_nova_venda.save(db_session)

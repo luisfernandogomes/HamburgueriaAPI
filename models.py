@@ -117,8 +117,15 @@ class Venda(Base):
     __tablename__ = 'vendas'
     id_venda = Column(Integer, primary_key=True)
     data_venda = Column(String(10), nullable=False, index=True)
+    valor_unitario = Column(Float, nullable=False, index=True)
     valor_venda = Column(Float, nullable=False, index=True)
+    qtd_lanches = Column(Integer, nullable=False, index=True)
     status_venda = Column(Boolean, default=True, index=True)
+
+    # relacionamento com Lanche
+    lanche_id = Column(Integer, ForeignKey('lanches.id_lanche'), nullable=False)
+    # relacionamento com Pessoa
+    pessoa_id = Column(Integer, ForeignKey('pessoas.id_pessoa'), nullable=False)
 
     def __repr__(self):
         return '<Venda: {} {}>'.format(self.id_venda, self.data_venda)
@@ -141,10 +148,13 @@ class Venda(Base):
 
     def serialize(self):
         var_venda = {
-            'id_venda': self.id_venda,
-            'data_venda': self.data_venda,
-            'valor_venda': self.valor_venda,
-            'status_venda': self.status_venda,
+            "id_venda": self.id_venda,
+            "data_venda": self.data_venda,
+            "valor_unitario": self.valor_unitario,
+            "valor_venda": self.valor_venda,
+            "qtd_lanches": self.qtd_lanches,
+            "status_venda": self.status_venda,
+            "lanche_id": self.lanche_id,
         }
         return var_venda
 
@@ -155,7 +165,7 @@ class Entrada(Base):
     data_entrada = Column(String(10), nullable=False, index=True)
     qtd_entrada = Column(Integer, nullable=False, index=True)
     valor_unitario = Column(Float, nullable=False)  # preço no momento da compra
-    valor_entrada = Column(Float, nullable=False, index=True)  # calculado
+    valor_entrada = Column(Float, nullable=False, index=True)
     validade_lote = Column(String(10), nullable=False, index=True)
 
     # relacionamento com Insumo
