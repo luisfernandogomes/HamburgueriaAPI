@@ -49,7 +49,7 @@ class Insumo(Base):
     __tablename__ = 'insumos'
     id_insumo = Column(Integer, primary_key=True)
     nome_insumo = Column(String(20), nullable=False, index=True)
-    qtd_insumo = Column(Integer, nullable=False, index=True)
+    qtd_insumo = Column(Integer, default=0, nullable=False, index=True)
     validade = Column(String(10), index=True)
     categoria_id = Column(Integer, ForeignKey('categorias.id_categoria'), nullable=False)
 
@@ -151,6 +151,7 @@ class Venda(Base):
 class Entrada(Base):
     __tablename__ = 'entradas'
     id_entrada = Column(Integer, primary_key=True)
+    nota_fiscal = Column(String(20), index=True)
     data_entrada = Column(String(10), nullable=False, index=True)
     qtd_entrada = Column(Integer, nullable=False, index=True)
     valor_unitario = Column(Float, nullable=False)  # preço no momento da compra
@@ -176,6 +177,7 @@ class Entrada(Base):
     def serialize(self):
         return {
             'id_entrada': self.id_entrada,
+            'nota_fiscal': self.nota_fiscal,
             'data_entrada': self.data_entrada,
             'qtd_entrada': self.qtd_entrada,
             'valor_unitario': self.valor_unitario,
