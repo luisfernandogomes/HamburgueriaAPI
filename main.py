@@ -33,16 +33,16 @@ def login():
     dados = request.get_json()
     email = dados['email']
     senha = dados['senha']
-
     db = local_session()
 
     try:
         sql = select(Pessoa).where(Pessoa.email == email)
         user = db.execute(sql).scalar()
-
-        if user and user.check_password(senha):
+        if user:
+            user.check_password(senha)
             print("if login")
             access_token = create_access_token(identity=str(user.email))
+            print(access_token)
             return jsonify({
                 "access_token":access_token,
                 "papel": user.papel,
@@ -83,9 +83,10 @@ def cadastrar_pessoa():
                 cpf=cpf,
                 salario=salario,
                 papel=papel,
-                senha_hash=senha_hash,
+
                 email=email,
             )
+            form_nova_pessoa.set_senha_hash(senha_hash)
             print(form_nova_pessoa)
             form_nova_pessoa.save(db_session)
 
@@ -344,6 +345,7 @@ def cadastrar_categoria():
 
 # LISTAR (GET)
 @app.route('/lanches', methods=['GET'])
+@jwt_required
 def listar_lanches():
     db_session = local_session()
     try:
