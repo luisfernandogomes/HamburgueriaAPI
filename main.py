@@ -5,6 +5,7 @@ from datetime import datetime
 from models import *
 from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = "03050710"
@@ -31,75 +32,75 @@ def admin_required(fn):
 @app.route('/login', methods=['POST'])
 def login():
     dados = request.get_json()
-    email = dados['email']
-    senha = dados['senha']
-    db = local_session()
+    email = dados.get('email')
+    senha = dados.get('senha')
 
-    try:
-        sql = select(Pessoa).where(Pessoa.email == email)
-        user = db.execute(sql).scalar()
-        if user:
-            user.check_password(senha)
-            print("if login")
-            access_token = create_access_token(identity=str(user.email))
-            print(access_token)
-            return jsonify({
-                "access_token":access_token,
-                "papel": user.papel,
-            }), 200
-        return jsonify({"msg": "Credenciais inválidas"}), 401
-    except Exception as e:
-        print(e)
-        return jsonify({""
-                        "msg": str(e)}), 500
-    finally:
-        db.close()
-
-
-@app.route('/pessoas', methods=['POST'])
-def cadastrar_pessoa():
     db_session = local_session()
+
     try:
-        dados_pessoa = request.get_json()
+        # Verifica se email e senha foram fornecidos
+        if not email or not senha:
+            return jsonify({'msg': 'CPF e senha são obrigatórios'}), 400
 
-        campos_obrigatorios = ["nome_pessoa", "cpf", "salario", "papel", "senha_hash", "email"]
+        # Consulta o usuário pelo CPF
+        sql = select(Pessoa).where(Pessoa.email == email)
+        user = db_session.execute(sql).scalar()
 
-        if not all(campo in dados_pessoa for campo in campos_obrigatorios):
-            return jsonify({"error": "Campo inexistente"}), 400
+        # Verifica se o usuário existe e se a senha está correta
+        if user and user.check_password_hash(senha):
+            access_token = create_access_token(identity=email)  # Gera o token de acesso
+            papel = user.papel  # Obtém o papel do usuário
+            nome = user.nome_pessoa  # Obtém o nome do usuário
+            print(f"Login bem-sucedido: {nome}, Papel: {papel}")  # Diagnóstico
+            return jsonify(access_token=access_token, papel=papel, nome=nome)  # Retorna o nome também
 
-        if any(not dados_pessoa[campo] for campo in campos_obrigatorios):
-            return jsonify({"error": "Preencher todos os campos"}), 400
+        print("Credenciais inválidas.")  # Diagnóstico
+        return jsonify({'msg': 'Credenciais inválidas'}), 401
 
-        else:
-            nome_pessoa = dados_pessoa['nome_pessoa']
-            cpf = dados_pessoa['cpf']
-            salario = dados_pessoa['salario']
-            papel = dados_pessoa['papel']
-            senha_hash = dados_pessoa['senha_hash']
-            email = dados_pessoa['email']
-
-            form_nova_pessoa = Pessoa(
-                nome_pessoa=nome_pessoa,
-                cpf=cpf,
-                salario=salario,
-                papel=papel,
-
-                email=email,
-            )
-            form_nova_pessoa.set_senha_hash(senha_hash)
-            print(form_nova_pessoa)
-            form_nova_pessoa.save(db_session)
-
-            dicio = form_nova_pessoa.serialize()
-            resultado = {"success": "Pessoa cadastrada com sucesso", "Pessoas": dicio}
-
-            return jsonify(resultado), 201
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
     finally:
         db_session.close()
 
+
+@app.route('/cadastro_pessoas_login', methods=['POST'])
+def cadastro():
+    dados = request.get_json()
+    nome_pessoa = dados['nome_pessoa']
+    cpf = dados['cpf']
+    email = dados['email']
+    papel = dados.get('papel', 'usuario')
+    senha = dados['senha']
+    salario = dados['salario']
+    status_pessoa = dados['status_pessoa']
+
+
+    if not nome_pessoa or not cpf or not senha or not salario or not status_pessoa:
+        return jsonify({"msg": "Nome de usuário, CPF, senha e endereço são obrigatórios"}), 400
+
+    # Verificação do CPF
+    if len(cpf) != 11 or not cpf.isdigit():
+        return jsonify({"msg": "O CPF deve conter exatamente 11 dígitos."}), 400
+
+    db_session = local_session()
+    try:
+        # Verificar se o usuário já existe
+        user_check = select(Pessoa).where(Pessoa.email == email)
+        usuario_existente = db_session.execute(user_check).scalar()
+
+        if usuario_existente:
+            return jsonify({"msg": "Usuário já existe"}), 400
+
+        novo_usuario = Pessoa(nome_pessoa=nome_pessoa, cpf=cpf, papel=papel, salario=salario, status_pessoa=status_pessoa, email=email)
+        novo_usuario.set_senha_hash(senha)
+        db_session.add(novo_usuario)
+        db_session.commit()
+
+        user_id = novo_usuario.id_pessoa
+        return jsonify({"msg": "Usuário criado com sucesso", "user_id": user_id}), 201
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"msg": f"Erro ao registrar usuário: {str(e)}"}), 500
+    finally:
+        db_session.close()
 
 
 # Cadastro (POST)
@@ -209,7 +210,6 @@ def cadastrar_insumo():
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
-
 
 
 @app.route('/vendas', methods=['POST'])
