@@ -10,6 +10,132 @@ app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = "03050710"
 jwt = JWTManager(app)
 
+# Login
+def admin_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        current_user = get_jwt_identity()
+        print(f'c_user:{current_user}')
+        db = local_session()
+        try:
+            sql = select(Pessoa).where(Pessoa.email == current_user)
+            user = db.execute(sql).scalar()
+            print(f'teste admin: {user and user.papel == "admin"} {user.papel}')
+            if user and user.papel == "admin":
+                return fn(*args, **kwargs)
+            return jsonify(msg="Acesso negado: Requer privilégios de administrador"), 403
+        finally:
+            db.close()
+    return wrapper
+
+@app.route('/login', methods=['POST'])
+def login():
+    dados = request.get_json()
+    email = dados['email']
+    senha = dados['senha']
+
+    db = local_session()
+
+    try:
+        sql = select(Pessoa).where(Pessoa.email == email)
+        user = db.execute(sql).scalar()
+
+        if user and user.check_password(senha):
+            print("if login")
+            access_token = create_access_token(identity=str(user.email))
+            return jsonify({
+                "access_token":access_token,
+                "papel": user.papel,
+            }), 200
+        return jsonify({"msg": "Credenciais inválidas"}), 401
+    except Exception as e:
+        print(e)
+        return jsonify({""
+                        "msg": str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/pessoas', methods=['POST'])
+def cadastrar_pessoa():
+    db_session = local_session()
+    try:
+        dados_pessoa = request.get_json()
+
+        campos_obrigatorios = ["nome_pessoa", "cpf", "salario", "papel", "senha_hash", "email"]
+
+        if not all(campo in dados_pessoa for campo in campos_obrigatorios):
+            return jsonify({"error": "Campo inexistente"}), 400
+
+        if any(not dados_pessoa[campo] for campo in campos_obrigatorios):
+            return jsonify({"error": "Preencher todos os campos"}), 400
+
+        else:
+            nome_pessoa = dados_pessoa['nome_pessoa']
+            cpf = dados_pessoa['cpf']
+            salario = dados_pessoa['salario']
+            papel = dados_pessoa['papel']
+            senha_hash = dados_pessoa['senha_hash']
+            email = dados_pessoa['email']
+
+            form_nova_pessoa = Pessoa(
+                nome_pessoa=nome_pessoa,
+                cpf=cpf,
+                salario=salario,
+                papel=papel,
+                senha_hash=senha_hash,
+                email=email,
+            )
+            print(form_nova_pessoa)
+            form_nova_pessoa.save(db_session)
+
+            dicio = form_nova_pessoa.serialize()
+            resultado = {"success": "Pessoa cadastrada com sucesso", "Pessoas": dicio}
+
+            return jsonify(resultado), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    finally:
+        db_session.close()
+
+
+
+# Cadastro (POST)
+@app.route('/usuarios', methods=['POST'])
+def cadastro_usuarios():
+    dados = request.get_json()
+    nome_pessoa = dados['nome_pessoa']
+    email = dados['email']
+    papel = dados.get('papel','usuario')
+    senha = dados['senha']
+    cpf = dados['cpf']
+    salario = dados['salario']
+
+    if not nome_pessoa or not email or not senha:
+        return jsonify({"msg": "Nome de usuário, email e senha são obrigatórios"}), 400
+
+    banco = local_session()
+    try:
+        # Verificar se o usuário já existe
+        user_check = select(Pessoa).where(Pessoa.nome_pessoa == nome_pessoa)
+        usuario_existente = banco.execute(user_check).scalar()
+
+        if usuario_existente:
+            return jsonify({"msg": "Usuário já existe"}), 400
+
+        novo_usuario = Pessoa(nome_pessoa=nome_pessoa, email=email, papel=papel)
+        novo_usuario.set_senha_hash(senha)
+        banco.add(novo_usuario)
+        banco.commit()
+
+        user_id = novo_usuario.id_pessoa
+        return jsonify({"msg": "Usuário criado com sucesso", "user_id": user_id}), 201
+    except Exception as e:
+        banco.rollback()
+        return jsonify({"msg": f"Erro ao registrar usuário: {str(e)}"}), 500
+    finally:
+        banco.close()
 
 @app.route('/lanches', methods=['POST'])
 def cadastrar_lanche():
@@ -83,49 +209,6 @@ def cadastrar_insumo():
     finally:
         db_session.close()
 
-
-@app.route('/pessoas', methods=['POST'])
-def cadastrar_pessoa():
-    db_session = local_session()
-    try:
-        dados_pessoa = request.get_json()
-
-        campos_obrigatorios = ["nome_pessoa", "cpf", "salario", "papel", "senha_hash", "email"]
-
-        if not all(campo in dados_pessoa for campo in campos_obrigatorios):
-            return jsonify({"error": "Campo inexistente"}), 400
-
-        if any(not dados_pessoa[campo] for campo in campos_obrigatorios):
-            return jsonify({"error": "Preencher todos os campos"}), 400
-
-        else:
-            nome_pessoa = dados_pessoa['nome_pessoa']
-            cpf = dados_pessoa['cpf']
-            salario = dados_pessoa['salario']
-            papel = dados_pessoa['papel']
-            senha_hash = dados_pessoa['senha_hash']
-            email = dados_pessoa['email']
-
-            form_nova_pessoa = Pessoa(
-                nome_pessoa=nome_pessoa,
-                cpf=cpf,
-                salario=salario,
-                papel=papel,
-                senha_hash=senha_hash,
-                email=email,
-            )
-            print(form_nova_pessoa)
-            form_nova_pessoa.save(db_session)
-
-            dicio = form_nova_pessoa.serialize()
-            resultado = {"success": "Pessoa cadastrada com sucesso", "Pessoas": dicio}
-
-            return jsonify(resultado), 201
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
-    finally:
-        db_session.close()
 
 
 @app.route('/vendas', methods=['POST'])
