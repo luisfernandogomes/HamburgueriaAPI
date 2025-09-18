@@ -60,24 +60,29 @@ def login():
     finally:
         db_session.close()
 
-
 @app.route('/cadastro_pessoas_login', methods=['POST'])
 def cadastro():
     dados = request.get_json()
     nome_pessoa = dados['nome_pessoa']
     cpf = dados['cpf']
     email = dados['email']
-    papel = dados.get('papel', 'usuario')
+    papel = dados.get('papel', 'cliente')  # padrão vira cliente
     senha = dados['senha']
     salario = dados['salario']
-    status_pessoa = dados['status_pessoa']
 
-    if not nome_pessoa or not email or not senha or not status_pessoa:
-        return jsonify({"msg": "Nome de usuário, Email, senha e status são obrigatórios"}), 400
+    # 🔹 Sempre força status como "Ativo"
+    status_pessoa = "Ativo"
 
-    # Verificação do CPF
-    if len(cpf) != 11 or not cpf.isdigit():
-        return jsonify({"msg": "O CPF deve conter exatamente 11 dígitos."}), 400
+    if not nome_pessoa or not email or not senha:
+        return jsonify({"msg": "Nome, Email e senha são obrigatórios"}), 400
+
+    # 🔹 Se o papel for admin → valida CPF
+    if papel == "admin":
+        if not cpf or len(cpf) != 11 or not cpf.isdigit():
+            return jsonify({"msg": "O CPF do admin deve conter exatamente 11 dígitos numéricos."}), 400
+    else:
+        # 🔹 Se não for admin → ignora CPF e zera para evitar lixo
+        cpf = None
 
     db_session = local_session()
     try:
@@ -88,13 +93,21 @@ def cadastro():
         if usuario_existente:
             return jsonify({"msg": "Usuário já existe"}), 400
 
-        novo_usuario = Pessoa(nome_pessoa=nome_pessoa, cpf=cpf, papel=papel, salario=salario, status_pessoa=status_pessoa, email=email)
+        novo_usuario = Pessoa(
+            nome_pessoa=nome_pessoa,
+            cpf=cpf,
+            papel=papel,
+            salario=salario,
+            status_pessoa=status_pessoa,  # sempre "Ativo"
+            email=email
+        )
         novo_usuario.set_senha_hash(senha)
         db_session.add(novo_usuario)
         db_session.commit()
 
         user_id = novo_usuario.id_pessoa
         return jsonify({"msg": "Usuário criado com sucesso", "user_id": user_id}), 201
+
     except Exception as e:
         db_session.rollback()
         return jsonify({"msg": f"Erro ao registrar usuário: {str(e)}"}), 500
