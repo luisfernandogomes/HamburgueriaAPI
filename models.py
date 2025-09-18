@@ -202,9 +202,9 @@ class Pessoa(Base):
     __tablename__ = 'pessoas'
     id_pessoa = Column(Integer, primary_key=True)
     nome_pessoa = Column(String(20), nullable=False, index=True)
-    cpf = Column(String(11), nullable=False, index=True)
-    salario = Column(Float, nullable=False, index=True)
-    papel = Column(String(20), nullable=False, index=True)
+    cpf = Column(String(11), nullable=True, index=True)
+    salario = Column(Float, nullable=True, index=True)
+    papel = Column(String(20), nullable=True, index=True)
     status_pessoa = Column(String, nullable=False)
     senha_hash = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)

@@ -40,7 +40,7 @@ def login():
     try:
         # Verifica se email e senha foram fornecidos
         if not email or not senha:
-            return jsonify({'msg': 'CPF e senha são obrigatórios'}), 400
+            return jsonify({'msg': 'Email e senha são obrigatórios'}), 400
 
         # Consulta o usuário pelo CPF
         sql = select(Pessoa).where(Pessoa.email == email)
@@ -72,9 +72,8 @@ def cadastro():
     salario = dados['salario']
     status_pessoa = dados['status_pessoa']
 
-
-    if not nome_pessoa or not cpf or not senha or not salario or not status_pessoa:
-        return jsonify({"msg": "Nome de usuário, CPF, senha e endereço são obrigatórios"}), 400
+    if not nome_pessoa or not email or not senha or not status_pessoa:
+        return jsonify({"msg": "Nome de usuário, Email, senha e status são obrigatórios"}), 400
 
     # Verificação do CPF
     if len(cpf) != 11 or not cpf.isdigit():
