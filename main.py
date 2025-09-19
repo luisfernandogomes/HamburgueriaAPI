@@ -114,7 +114,6 @@ def cadastro():
     finally:
         db_session.close()
 
-
 # Cadastro (POST)
 @app.route('/usuarios', methods=['POST'])
 def cadastro_usuarios():
@@ -186,6 +185,56 @@ def cadastrar_lanche():
     finally:
         db_session.close()
 
+@app.route("/entradas", methods=["POST"])
+def cadastrar_entrada():
+    dados = request.json
+
+    # Campos obrigatórios
+    campos_obrigatorios = ["insumo_id", "qtd_entrada", "data_entrada", "nota_fiscal", "valor_entrada"]
+    if not all(campo in dados for campo in campos_obrigatorios):
+        return jsonify({"error": "Campos obrigatórios ausentes"}), 400
+
+    if any(dados[campo] == "" for campo in campos_obrigatorios):
+        return jsonify({"error": "Preencha todos os campos"}), 400
+
+    # Verificar se o insumo existe
+    insumo = local_session.query(Insumo).filter_by(id_insumo=dados["insumo_id"]).first()
+    if not insumo:
+        return jsonify({"error": "Insumo não encontrado"}), 404
+
+    # Validações numéricas
+    try:
+        qtd = int(dados["qtd_entrada"])
+        valor = float(dados["valor_entrada"])
+    except ValueError:
+        return jsonify({"error": "Quantidade e valor devem ser numéricos"}), 400
+
+    if qtd <= 0 or valor <= 0:
+        return jsonify({"error": "Quantidade e valor devem ser maiores que zero"}), 400
+
+    # Atualiza o estoque do insumo
+    insumo.qtd_insumo += qtd
+
+    # Cria a entrada
+    nova_entrada = Entrada(
+        nota_fiscal=dados["nota_fiscal"],
+        data_entrada=dados["data_entrada"],
+        qtd_entrada=qtd,
+        valor_entrada=valor,
+        insumo_id=insumo.id_insumo
+    )
+
+    try:
+        nova_entrada.save(local_session)
+        insumo.save(local_session)
+
+        return jsonify({
+            "success": "Entrada cadastrada com sucesso",
+            "entrada": nova_entrada.serialize()
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": f"Erro ao salvar entrada: {str(e)}"}), 500
 
 @app.route('/insumos', methods=['POST'])
 def cadastrar_insumo():
@@ -193,7 +242,7 @@ def cadastrar_insumo():
     try:
         dados_insumo = request.get_json()
 
-        campos_obrigatorios = ["nome_insumo", "validade", "categoria_id"]
+        campos_obrigatorios = ["nome_insumo", "categoria_id"]
 
         if not all(campo in dados_insumo for campo in campos_obrigatorios):
             return jsonify({"error": "Campo inexistente"}), 400
@@ -202,13 +251,9 @@ def cadastrar_insumo():
             return jsonify({"error": "Preencher todos os campos"}), 400
 
         else:
-            nome_insumo = dados_insumo['nome_insumo']
-            validade = dados_insumo['validade']
-            categoria_id = dados_insumo['categoria_id']
             form_novo_insumo = Insumo(
-                nome_insumo=nome_insumo,
-                validade=validade,
-                categoria_id=categoria_id,
+                nome_insumo=dados_insumo['nome_insumo'],
+                categoria_id=dados_insumo['categoria_id'],
             )
             print(form_novo_insumo)
             form_novo_insumo.save(db_session)
@@ -223,105 +268,128 @@ def cadastrar_insumo():
     finally:
         db_session.close()
 
+@app.route("/lanche_insumos", methods=["POST"])
+def cadastrar_lanche_insumo():
+    dados = request.json
+
+    # Verificar campos obrigatórios
+    campos_obrigatorios = ["lanche_id", "insumo_id", "qtd_insumo"]
+    if not all(campo in dados for campo in campos_obrigatorios):
+        return jsonify({"error": "Campos obrigatórios não informados"}), 400
+
+    if any(dados[campo] == "" for campo in campos_obrigatorios):
+        return jsonify({"error": "Preencher todos os campos"}), 400
+
+    lanche_id = dados["lanche_id"]
+    insumo_id = dados["insumo_id"]
+    qtd_insumo = dados["qtd_insumo"]
+
+    # Verificar se o lanche existe
+    lanche = local_session.query(Lanche).filter_by(id_lanche=lanche_id).first()
+    if not lanche:
+        return jsonify({"error": "Lanche não encontrado"}), 404
+
+    # Verificar se o insumo existe
+    insumo = local_session.query(Insumo).filter_by(id_insumo=insumo_id).first()
+    if not insumo:
+        return jsonify({"error": "Insumo não encontrado"}), 404
+
+    # Verificar se esse insumo já está vinculado ao lanche
+    ja_existe = local_session.query(Lanche_insumo).filter_by(
+        lanche_id=lanche_id, insumo_id=insumo_id
+    ).first()
+
+    if ja_existe:
+        return jsonify({"error": "Esse insumo já está vinculado a esse lanche"}), 409
+
+    try:
+        qtd = int(qtd_insumo)
+        if qtd <= 0:
+            return jsonify({"error": "Quantidade deve ser maior que zero"}), 400
+    except ValueError:
+        return jsonify({"error": "Quantidade deve ser numérica"}), 400
+
+    # Criar o vínculo lanche-insumo
+    novo_item_receita = Lanche_insumo(
+        lanche_id=lanche_id,
+        insumo_id=insumo_id,
+        qtd_insumo=qtd
+    )
+
+    try:
+        novo_item_receita.save(local_session)
+        return jsonify({
+            "success": "Insumo adicionado à receita do lanche com sucesso",
+            "lanche_insumo": novo_item_receita.serialize()
+        }), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/vendas', methods=['POST'])
 def cadastrar_venda():
     db_session = local_session()
     try:
-        dados_venda = request.get_json()
+        dados = request.get_json()
+        campos = ["data_venda", "lanche_id", "pessoa_id", "qtd_lanche"]
 
-        campos_obrigatorios = ["qtd_lanches", "data_venda", "lanche_id", "pessoa_id"]
+        # 1. Validação dos dados
+        if not all(campo in dados for campo in campos):
+            return jsonify({"error": "Campos obrigatórios não informados"}), 400
 
-        if not all(campo in dados_venda for campo in campos_obrigatorios):
-            return jsonify({"error": "Campo inexistente"}), 400
+        lanche_id = dados["lanche_id"]
+        pessoa_id = dados["pessoa_id"]
+        data_venda = dados["data_venda"]
+        qtd_lanche = int(dados["qtd_lanche"])
 
-        if any(not dados_venda[campo] for campo in campos_obrigatorios):
-            return jsonify({"error": "Preencher todos os campos"}), 400
+        lanche = db_session.query(Lanche).filter_by(id_lanche=lanche_id).first()
+        pessoa = db_session.query(Pessoa).filter_by(id_pessoa=pessoa_id).first()
 
-        # verificar se lanche existe
-        lanche = local_session.query(Lanche).filter_by(id_lanche=dados_venda["lanche_id"]).first()
-        # verificar se pessoa existe
-        pessoa = local_session.query(Pessoa).filter_by(id_pessoa=dados_venda["pessoa_id"]).first()
         if not lanche:
             return jsonify({"error": "Lanche não encontrado"}), 404
         if not pessoa:
-            return jsonify({"error": "Pessoa não encontrado"}), 404
-        else:
-            lanche_id = dados_venda["lanche_id"]
-            pessoa_id = dados_venda["pessoa_id"]
-            valor_unitario = float(lanche.valor_lanche)
-            qtd_lanches = dados_venda['qtd_lanches']
-            valor_venda = float(qtd_lanches * valor_unitario)
-            data_venda = dados_venda['data_venda']
+            return jsonify({"error": "Pessoa não encontrada"}), 404
 
+        receita = db_session.query(Lanche_insumo).filter_by(lanche_id=lanche_id).all()
+        if not receita:
+            return jsonify({"error": "Esse lanche não tem receita cadastrada"}), 400
 
-            form_nova_venda = Venda(
+        # 2. Verificar estoque (precisa de insumos para TODOS os lanches)
+        for item in receita:
+            insumo = db_session.query(Insumo).filter_by(id_insumo=item.insumo_id).first()
+            if not insumo:
+                return jsonify({"error": f"Insumo ID {item.insumo_id} não encontrado"}), 404
+            if insumo.qtd_insumo < item.qtd_insumo * qtd_lanche:
+                return jsonify({"error": f"Estoque insuficiente para o insumo: {insumo.nome_insumo}"}), 400
+
+        # 3. Dar baixa nos insumos (todos de uma vez)
+        for item in receita:
+            insumo = db_session.query(Insumo).filter_by(id_insumo=item.insumo_id).first()
+            insumo.qtd_insumo -= item.qtd_insumo * qtd_lanche
+            db_session.add(insumo)
+
+        # 4. Registrar várias vendas (uma por lanche)
+        vendas_registradas = []
+        for _ in range(qtd_lanche):
+            nova_venda = Venda(
+                data_venda=data_venda,
                 lanche_id=lanche_id,
                 pessoa_id=pessoa_id,
-                valor_unitario=valor_unitario,
-                qtd_lanches=qtd_lanches,
-                valor_venda=valor_venda,
-                data_venda=data_venda
+                valor_venda=lanche.valor_lanche,
+                status_venda=True
             )
-            print(form_nova_venda)
-            form_nova_venda.save(db_session)
+            nova_venda.save(db_session)
+            vendas_registradas.append(nova_venda.serialize())
 
-            dicio = form_nova_venda.serialize()
-            resultado = {"success": "venda cadastrada com sucesso", "vendas": dicio}
-            return jsonify(resultado), 201
+        return jsonify({
+            "success": f"{qtd_lanche} vendas registradas com sucesso",
+            "vendas": vendas_registradas
+        }), 201
+
     except Exception as e:
-        return jsonify({"error": str(e)})
+        db_session.rollback()
+        return jsonify({"error": str(e)}), 500
     finally:
         db_session.close()
-
-
-@app.route("/entradas", methods=["POST"])
-def cadastrar_entrada():
-    dados = request.json
-
-    # validação de campos obrigatórios
-    campos_obrigatorios = ["insumo_id", "qtd_entrada", "valor_unitario", "validade_lote", "data_entrada", "nota_fiscal"]
-    if not all(campo in dados for campo in campos_obrigatorios):
-        return jsonify({"error": "Campo inexistente"}), 400
-
-    if any(dados[campo] == "" for campo in campos_obrigatorios):
-        return jsonify({"error": "Preencher todos os campos"}), 400
-
-    # verificar se insumo existe
-    insumo = local_session.query(Insumo).filter_by(id_insumo=dados["insumo_id"]).first()
-    if not insumo:
-        return jsonify({"error": "Insumo não encontrado"}), 404
-
-    try:
-        nota_fiscal = dados["nota_fiscal"]
-        qtd = int(dados["qtd_entrada"])
-        valor_unitario = float(dados["valor_unitario"])
-    except ValueError:
-        return jsonify({"error": "Quantidade e valor devem ser numéricos"}), 400
-
-    if qtd <= 0 or valor_unitario <= 0:
-        return jsonify({"error": "Quantidade e valor devem ser maiores que zero"}), 400
-
-    # criar entrada
-    nova_entrada = Entrada(
-        nota_fiscal=nota_fiscal,
-        data_entrada=dados["data_entrada"],  # ex: "2025-09-05"
-        qtd_entrada=qtd,
-        valor_unitario=valor_unitario,
-        validade_lote=dados["validade_lote"],
-        insumo_id=insumo.id_insumo
-    )
-
-    try:
-        nova_entrada.save(local_session)
-
-        dicio = nova_entrada.serialize()
-        resultado = {"success": "venda cadastrada com sucesso", "vendas": dicio}
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-    return jsonify(resultado), 201
-
 
 @app.route('/categorias', methods=['POST'])
 def cadastrar_categoria():
@@ -354,7 +422,6 @@ def cadastrar_categoria():
     finally:
         db_session.close()
 
-
 # LISTAR (GET)
 @app.route('/lanches', methods=['GET'])
 @jwt_required
@@ -378,7 +445,6 @@ def listar_lanches():
     finally:
         db_session.close()
 
-
 @app.route('/insumos', methods=['GET'])
 def listar_insumos():
     db_session = local_session()
@@ -399,6 +465,26 @@ def listar_insumos():
     finally:
         db_session.close()
 
+@app.route('/lanche_insumos', methods=['GET'])
+def listar_lanche_insumos():
+    db_session = local_session()
+    try:
+
+        sql_lanche_insumo = select(Lanche_insumo)
+        resultado_lanche_insumos = db_session.execute(sql_lanche_insumo).scalars()
+        lanche_insumos = []
+
+        for n in resultado_lanche_insumos:
+            lanche_insumos.append(n.serialize())
+            print(lanche_insumos[-1])
+        return jsonify({
+            "lanche_insumos": lanche_insumos,
+            "success": "Listado com sucesso",
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    finally:
+        db_session.close()
 
 @app.route('/categorias', methods=['GET'])
 def listar_categorias():
@@ -419,7 +505,6 @@ def listar_categorias():
     finally:
         db_session.close()
 
-
 @app.route('/entradas', methods=['GET'])
 def listar_entradas():
     db_session = local_session()
@@ -439,7 +524,6 @@ def listar_entradas():
     finally:
         db_session.close()
 
-
 @app.route('/vendas', methods=['GET'])
 def listar_vendas():
     db_session = local_session()
@@ -458,8 +542,6 @@ def listar_vendas():
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
-
-
 @app.route('/pessoas', methods=['GET'])
 def listar_pessoas():
     db_session = local_session()
@@ -479,7 +561,6 @@ def listar_pessoas():
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
-
 
 @app.route('/get_insumo_id/<id_insumo>', methods=['GET'])
 def get_insumo_id(id_insumo):
@@ -506,7 +587,6 @@ def get_insumo_id(id_insumo):
         })
     finally:
         db_session.close()
-
 
 # EDITAR (PUT)
 @app.route('/lanches/<id_lanche>', methods=['PUT'])
@@ -550,7 +630,6 @@ def editar_lanche(id_lanche):
     finally:
         db_session.close()
 
-
 @app.route('/insumos/<id_insumo>', methods=['PUT'])
 def editar_insumo(id_insumo):
     db_session = local_session()
@@ -563,7 +642,7 @@ def editar_insumo(id_insumo):
         if not insumo_resultado:
             return jsonify({"error": "Insumo não encontrado"}), 400
 
-        campos_obrigatorios = ["nome_insumo", "validade", "categoria_id"]
+        campos_obrigatorios = ["nome_insumo", "categoria_id"]
 
         if not all(campo in dados_editar_insumo for campo in campos_obrigatorios):
             return jsonify({"error": "Campo inexistente"}), 400
@@ -573,7 +652,6 @@ def editar_insumo(id_insumo):
 
         else:
             insumo_resultado.nome_lanche = dados_editar_insumo['nome_insumo']
-            insumo_resultado.validade = dados_editar_insumo['validade']
             insumo_resultado.categoria_id = dados_editar_insumo['categoria_id']
 
             insumo_resultado.save(db_session)
@@ -591,7 +669,6 @@ def editar_insumo(id_insumo):
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
-
 
 @app.route('/categorias/<id_categoria>', methods=['PUT'])
 def editar_categoria(id_categoria):
@@ -637,7 +714,6 @@ def editar_categoria(id_categoria):
     finally:
         db_session.close()
 
-
 @app.route('/pessoas/<id_pessoa>', methods=['PUT'])
 def editar_pessoa(id_pessoa):
     db_session = local_session()
@@ -682,6 +758,31 @@ def editar_pessoa(id_pessoa):
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
+
+@app.route("/lanche_insumo", methods=["DELETE"])
+def deletar_lanche_insumo():
+    dados = request.json
+
+    # Verificação dos campos obrigatórios
+    if not dados or "lanche_id" not in dados or "insumo_id" not in dados:
+        return jsonify({"error": "Informe 'lanche_id' e 'insumo_id' no corpo da requisição"}), 400
+
+    lanche_id = dados["lanche_id"]
+    insumo_id = dados["insumo_id"]
+
+    # Verificar se o vínculo existe
+    relacionamento = local_session.query(Lanche_insumo).filter_by(
+        lanche_id=lanche_id, insumo_id=insumo_id
+    ).first()
+
+    if not relacionamento:
+        return jsonify({"error": "Esse insumo não está vinculado a esse lanche"}), 404
+
+    try:
+        relacionamento.delete(local_session)
+        return jsonify({"success": "Relacionamento removido com sucesso"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5000)

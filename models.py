@@ -51,7 +51,6 @@ class Insumo(Base):
     id_insumo = Column(Integer, primary_key=True)
     nome_insumo = Column(String(20), nullable=False, index=True)
     qtd_insumo = Column(Integer, default=0, nullable=False, index=True)
-    validade = Column(String(10), index=True)
     categoria_id = Column(Integer, ForeignKey('categorias.id_categoria'), nullable=False)
 
     def __repr__(self):
@@ -78,14 +77,48 @@ class Insumo(Base):
             'id_insumo': self.id_insumo,
             'nome_insumo': self.nome_insumo,
             'qtd_insumo': self.qtd_insumo,
-            'validade': self.validade,
             'categoria_id': self.categoria_id,
         }
         return var_insumo
 
+class Lanche_insumo(Base):
+    __tablename__ = 'lanche_insumos'
+    id_lanche_insumo = Column(Integer, primary_key=True)
+    qtd_insumo = Column(Integer, index=True)
+    lanche_id = Column(Integer, ForeignKey('lanches.id_lanche'))
+    insumo_id = Column(Integer, ForeignKey('insumos.id_insumo'))
+
+    def __repr__(self):
+        return '<Lanche_insumo: {} {}>'.format(self.id_lanche_insumo, self.qtd_insumo)
+
+    def save(self, db_session):
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def serialize(self):
+        var_lanche_insumo = {
+            'id_lanche_insumo': self.id_lanche_insumo,
+            'qtd_insumo': self.qtd_insumo,
+            'lanche_id': self.lanche_id,
+            'insumo_id': self.insumo_id,
+        }
+        return var_lanche_insumo
+
 class Categoria(Base):
     __tablename__ = 'categorias'
-    id_categoria= Column(Integer, primary_key=True)
+    id_categoria = Column(Integer, primary_key=True)
     nome_categoria = Column(String(20), nullable=False, index=True)
 
     def __repr__(self):
@@ -118,9 +151,7 @@ class Venda(Base):
     __tablename__ = 'vendas'
     id_venda = Column(Integer, primary_key=True)
     data_venda = Column(String(10), nullable=False, index=True)
-    valor_unitario = Column(Float, nullable=False, index=True)
     valor_venda = Column(Float, nullable=False, index=True)
-    qtd_lanches = Column(Integer, nullable=False, index=True)
     status_venda = Column(Boolean, default=True, index=True)
 
     # relacionamento com Lanche
@@ -151,12 +182,8 @@ class Venda(Base):
         var_venda = {
             "id_venda": self.id_venda,
             "data_venda": self.data_venda,
-            "valor_unitario": self.valor_unitario,
             "valor_venda": self.valor_venda,
-            "qtd_lanches": self.qtd_lanches,
             "status_venda": self.status_venda,
-
-
             "lanche_id": self.lanche_id,
             "pessoa_id": self.pessoa_id,
         }
@@ -168,9 +195,7 @@ class Entrada(Base):
     nota_fiscal = Column(String(20), index=True)
     data_entrada = Column(String(10), nullable=False, index=True)
     qtd_entrada = Column(Integer, nullable=False, index=True)
-    valor_unitario = Column(Float, nullable=False)  # preço no momento da compra
     valor_entrada = Column(Float, nullable=False, index=True)
-    validade_lote = Column(String(10), nullable=False, index=True)
 
     # relacionamento com Insumo
     insumo_id = Column(Integer, ForeignKey('insumos.id_insumo'), nullable=False)
@@ -180,9 +205,15 @@ class Entrada(Base):
 
     def save(self, db_session):
         try:
-            # garante que o valor total seja sempre consistente
-            self.valor_entrada = self.qtd_entrada * self.valor_unitario
             db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
             db_session.commit()
         except:
             db_session.rollback()
@@ -194,9 +225,7 @@ class Entrada(Base):
             'nota_fiscal': self.nota_fiscal,
             'data_entrada': self.data_entrada,
             'qtd_entrada': self.qtd_entrada,
-            'valor_unitario': self.valor_unitario,
             'valor_entrada': self.valor_entrada,
-            'validade_lote': self.validade_lote,
             'insumo_id': self.insumo_id
         }
 
